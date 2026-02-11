@@ -109,7 +109,7 @@ const SupplierPartForm = ({
         if (!open) onClose();
       }}
     >
-      <DrawerContent>
+      <DrawerContent size="lg">
         <ValidatedForm
           defaultValues={initialValues}
           validator={supplierPartValidator}
@@ -160,7 +160,7 @@ const SupplierPartForm = ({
               )}
               {/* Show quantity price breaks if available */}
               {priceBreaks.length > 0 && (
-                <div className="text-sm bg-muted/50 rounded-md p-3 space-y-2">
+                <div className="text-sm bg-muted/50 rounded-md p-3 space-y-2 w-full">
                   <div className="font-medium text-foreground">
                     Price Breaks
                   </div>

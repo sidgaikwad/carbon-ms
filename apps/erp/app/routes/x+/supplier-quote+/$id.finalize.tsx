@@ -227,7 +227,8 @@ export async function action(args: ActionFunctionArgs) {
         await client
           .from("supplierPart")
           .update({
-            unitPrice: (bestPrice.unitPrice ?? 0) / conversionFactor
+            unitPrice: (bestPrice.unitPrice ?? 0) / conversionFactor,
+            minimumOrderQuantity: bestPrice.quantity ?? 1
           })
           .eq("id", supplierPartId);
       }

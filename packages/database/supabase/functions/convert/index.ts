@@ -1621,19 +1621,23 @@ serve(async (req: Request) => {
                 .execute();
             }
 
-            // Update each supplierPart.unitPrice with the best (lowest) price
-            // across all tiers (quotes + POs + manual)
+            // Update each supplierPart with the best (lowest) price and its
+            // corresponding MOQ across all tiers (quotes + POs + manual)
             for (const [, spId] of supplierPartIdByItemId) {
-              const result = await trx
+              const bestTier = await trx
                 .selectFrom("supplierPartPrice")
-                .select((eb) => eb.fn.min("unitPrice").as("minPrice"))
+                .select(["unitPrice", "quantity"])
                 .where("supplierPartId", "=", spId)
+                .orderBy("unitPrice", "asc")
                 .executeTakeFirst();
 
-              if (result?.minPrice != null) {
+              if (bestTier) {
                 await trx
                   .updateTable("supplierPart")
-                  .set({ unitPrice: Number(result.minPrice) })
+                  .set({
+                    unitPrice: Number(bestTier.unitPrice),
+                    minimumOrderQuantity: Number(bestTier.quantity),
+                  })
                   .where("id", "=", spId)
                   .execute();
               }
