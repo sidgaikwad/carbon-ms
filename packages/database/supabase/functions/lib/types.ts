@@ -13283,6 +13283,7 @@ export type Database = {
           plannedEndTime: string | null
           plannedStartTime: string | null
           priority: Database["public"]["Enums"]["maintenanceDispatchPriority"]
+          procedureId: string | null
           severity: Database["public"]["Enums"]["maintenanceSeverity"]
           source: Database["public"]["Enums"]["maintenanceSource"]
           status: Database["public"]["Enums"]["maintenanceDispatchStatus"]
@@ -13311,6 +13312,7 @@ export type Database = {
           plannedEndTime?: string | null
           plannedStartTime?: string | null
           priority?: Database["public"]["Enums"]["maintenanceDispatchPriority"]
+          procedureId?: string | null
           severity: Database["public"]["Enums"]["maintenanceSeverity"]
           source?: Database["public"]["Enums"]["maintenanceSource"]
           status?: Database["public"]["Enums"]["maintenanceDispatchStatus"]
@@ -13339,6 +13341,7 @@ export type Database = {
           plannedEndTime?: string | null
           plannedStartTime?: string | null
           priority?: Database["public"]["Enums"]["maintenanceDispatchPriority"]
+          procedureId?: string | null
           severity?: Database["public"]["Enums"]["maintenanceSeverity"]
           source?: Database["public"]["Enums"]["maintenanceSource"]
           status?: Database["public"]["Enums"]["maintenanceDispatchStatus"]
@@ -13486,6 +13489,20 @@ export type Database = {
             columns: ["nonConformanceId"]
             isOneToOne: false
             referencedRelation: "nonConformance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenanceDispatch_procedureId_fkey"
+            columns: ["procedureId"]
+            isOneToOne: false
+            referencedRelation: "procedure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenanceDispatch_procedureId_fkey"
+            columns: ["procedureId"]
+            isOneToOne: false
+            referencedRelation: "procedures"
             referencedColumns: ["id"]
           },
           {
@@ -14597,10 +14614,12 @@ export type Database = {
           friday: boolean
           id: string
           lastGeneratedAt: string | null
+          locationId: string | null
           monday: boolean
           name: string
           nextDueAt: string | null
           priority: Database["public"]["Enums"]["maintenanceDispatchPriority"]
+          procedureId: string | null
           saturday: boolean
           skipHolidays: boolean
           sunday: boolean
@@ -14622,10 +14641,12 @@ export type Database = {
           friday?: boolean
           id?: string
           lastGeneratedAt?: string | null
+          locationId?: string | null
           monday?: boolean
           name: string
           nextDueAt?: string | null
           priority?: Database["public"]["Enums"]["maintenanceDispatchPriority"]
+          procedureId?: string | null
           saturday?: boolean
           skipHolidays?: boolean
           sunday?: boolean
@@ -14647,10 +14668,12 @@ export type Database = {
           friday?: boolean
           id?: string
           lastGeneratedAt?: string | null
+          locationId?: string | null
           monday?: boolean
           name?: string
           nextDueAt?: string | null
           priority?: Database["public"]["Enums"]["maintenanceDispatchPriority"]
+          procedureId?: string | null
           saturday?: boolean
           skipHolidays?: boolean
           sunday?: boolean
@@ -14724,6 +14747,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "maintenanceSchedule_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenanceSchedule_procedureId_fkey"
+            columns: ["procedureId"]
+            isOneToOne: false
+            referencedRelation: "procedure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenanceSchedule_procedureId_fkey"
+            columns: ["procedureId"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "maintenanceSchedule_updatedBy_fkey"

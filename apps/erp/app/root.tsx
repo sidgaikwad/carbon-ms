@@ -62,8 +62,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     CARBON_EDITION,
     CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
+    ERP_URL,
     GOOGLE_PLACES_API_KEY,
     JIRA_CLIENT_ID,
+    MES_URL,
     NOVU_APPLICATION_ID,
     ONSHAPE_CLIENT_ID,
     POSTHOG_API_HOST,
@@ -84,8 +86,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         CARBON_EDITION,
         CLOUDFLARE_TURNSTILE_SITE_KEY,
         CONTROLLED_ENVIRONMENT,
+        ERP_URL,
         GOOGLE_PLACES_API_KEY,
         JIRA_CLIENT_ID,
+        MES_URL,
         NOVU_APPLICATION_ID,
         ONSHAPE_CLIENT_ID,
         POSTHOG_API_HOST,
@@ -174,7 +178,10 @@ export function Document({
     >
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1"
+        />
         <Meta />
         <title>{title}</title>
         <link rel="manifest" href="/site.webmanifest" />

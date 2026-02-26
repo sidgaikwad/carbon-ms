@@ -57,6 +57,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const {
     CARBON_EDITION,
     CONTROLLED_ENVIRONMENT,
+    ERP_URL,
+    MES_URL,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     SUPABASE_URL,
@@ -72,6 +74,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       env: {
         CARBON_EDITION,
         CONTROLLED_ENVIRONMENT,
+        ERP_URL,
+        MES_URL,
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         SUPABASE_URL,
@@ -156,12 +160,12 @@ function Document({
     >
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1"
+        />
         <Meta />
         <title>{title}</title>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta />
         <link rel="manifest" href="/site.webmanifest" />
         <Links />
       </head>
