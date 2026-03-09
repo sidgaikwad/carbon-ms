@@ -393,9 +393,21 @@ const PurchaseOrderPDF = ({
             >
               <View style={tw("w-[75%]")} />
               <Text style={tw("w-[12%] text-right text-gray-600")}>Tax</Text>
-              <Text style={tw("w-[13%] text-right text-gray-800")}>
-                {formatter.format(taxAmount)}
-              </Text>
+              <View style={tw("w-[13%] flex flex-col items-end")}>
+                <Text style={tw("text-gray-800")}>
+                  {formatter.format(taxAmount)}
+                </Text>
+                {(() => {
+                  const taxPercent = purchaseOrderLines.find(
+                    (line) => (line.taxPercent ?? 0) > 0
+                  )?.taxPercent;
+                  return taxPercent ? (
+                    <Text style={tw("text-[7px] text-gray-400")}>
+                      {(taxPercent * 100).toFixed(0)}%
+                    </Text>
+                  ) : null;
+                })()}
+              </View>
             </View>
           )}
 
