@@ -85,6 +85,13 @@ export async function deactivateCustomer(
     return acc;
   }, {});
 
+  const companyGroups = await serviceRole
+    .from("group")
+    .select("id")
+    .eq("companyId", companyId);
+
+  const groupIds = companyGroups.data?.map((g) => g.id) ?? [];
+
   const [updatePermissions, userToCompanyDelete, customerAccountDelete] =
     await Promise.all([
       serviceRole
@@ -101,7 +108,15 @@ export async function deactivateCustomer(
         .delete()
         .eq("id", userId)
         .eq("companyId", companyId),
-      serviceRole.from("membership").delete().eq("memberUserId", userId)
+      ...(groupIds.length > 0
+        ? [
+            serviceRole
+              .from("membership")
+              .delete()
+              .eq("memberUserId", userId)
+              .in("groupId", groupIds)
+          ]
+        : [])
     ]);
 
   if (updatePermissions.error) {
@@ -147,6 +162,13 @@ export async function deactivateEmployee(
     return acc;
   }, {});
 
+  const companyGroups = await serviceRole
+    .from("group")
+    .select("id")
+    .eq("companyId", companyId);
+
+  const groupIds = companyGroups.data?.map((g) => g.id) ?? [];
+
   const [updatePermissions, userToCompanyDelete, employeeDelete] =
     await Promise.all([
       serviceRole
@@ -164,7 +186,15 @@ export async function deactivateEmployee(
         .eq("id", userId)
         .eq("companyId", companyId),
       serviceRole.from("employeeJob").delete().eq("id", userId),
-      serviceRole.from("membership").delete().eq("memberUserId", userId)
+      ...(groupIds.length > 0
+        ? [
+            serviceRole
+              .from("membership")
+              .delete()
+              .eq("memberUserId", userId)
+              .in("groupId", groupIds)
+          ]
+        : [])
     ]);
 
   if (updatePermissions.error) {
@@ -271,6 +301,13 @@ export async function deactivateSupplier(
     return acc;
   }, {});
 
+  const companyGroups = await serviceRole
+    .from("group")
+    .select("id")
+    .eq("companyId", companyId);
+
+  const groupIds = companyGroups.data?.map((g) => g.id) ?? [];
+
   const [updatePermissions, userToCompanyDelete, supplierAccountDelete] =
     await Promise.all([
       serviceRole
@@ -287,7 +324,15 @@ export async function deactivateSupplier(
         .delete()
         .eq("id", userId)
         .eq("companyId", companyId),
-      serviceRole.from("membership").delete().eq("memberUserId", userId)
+      ...(groupIds.length > 0
+        ? [
+            serviceRole
+              .from("membership")
+              .delete()
+              .eq("memberUserId", userId)
+              .in("groupId", groupIds)
+          ]
+        : [])
     ]);
 
   if (updatePermissions.error) {
