@@ -81,6 +81,14 @@ jobs:
           curl -fsSL https://get.pulumi.com | sh -s -- --version 3.212.0
           echo "$HOME/.pulumi/bin" >> $GITHUB_PATH
 
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
       - name: Install dependencies
         run: |
           npm install
