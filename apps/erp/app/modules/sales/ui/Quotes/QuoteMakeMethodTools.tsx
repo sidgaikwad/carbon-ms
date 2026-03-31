@@ -529,12 +529,7 @@ const QuoteMakeMethodTools = () => {
           }}
         >
           <ModalContent>
-            <ValidatedForm
-              validator={getMethodValidator}
-              onSubmit={() => {
-                /* form handled via fetcher */
-              }}
-            >
+            <ValidatedForm validator={getMethodValidator}>
               <ModalHeader>
                 <ModalTitle>Configure Item</ModalTitle>
                 <ModalDescription>Select an item to configure</ModalDescription>

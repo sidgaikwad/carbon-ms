@@ -31,22 +31,30 @@ export async function action({ request }: ActionFunctionArgs) {
           .update({
             // @ts-expect-error
             [field]: value,
-            // @ts-expect-error
-            defaultMethodType: value,
+            defaultMethodType:
+              value === "Make"
+                ? "Make to Order"
+                : value === "Buy"
+                  ? "Purchase to Order"
+                  : "Pull from Inventory",
             updatedBy: userId,
             updatedAt: new Date().toISOString()
           })
           .in("id", items as string[])
           .eq("companyId", companyId);
       }
-      if (field === "defaultMethodType" && value !== "Pick") {
+      if (field === "defaultMethodType" && value !== "Pull from Inventory") {
         return await client
           .from("item")
           .update({
-            // @ts-expect-error
+            // @ts-expect-error - value is a valid method type
             defaultMethodType: value,
-            // @ts-expect-error
-            replenishmentSystem: value,
+            replenishmentSystem:
+              value === "Make to Order"
+                ? "Make"
+                : value === "Purchase to Order"
+                  ? "Buy"
+                  : "Buy and Make",
             updatedBy: userId,
             updatedAt: new Date().toISOString()
           })
@@ -392,9 +400,7 @@ export async function action({ request }: ActionFunctionArgs) {
         if (partUpdate.error) {
           return partUpdate;
         }
-        if (itemUpdates.error) {
-          // TODO: handle error
-        }
+
         return itemUpdates;
       }
     case "consumableId":
@@ -460,9 +466,7 @@ export async function action({ request }: ActionFunctionArgs) {
         if (consumableUpdate.error) {
           return consumableUpdate;
         }
-        if (consumableItemUpdates.error) {
-          // TODO: handle error
-        }
+
         return consumableItemUpdates;
       }
     case "materialId":
@@ -526,9 +530,7 @@ export async function action({ request }: ActionFunctionArgs) {
         if (materialUpdate.error) {
           return materialUpdate;
         }
-        if (materialItemUpdates.error) {
-          // TODO: handle error
-        }
+
         return materialItemUpdates;
       }
     case "toolId":
@@ -589,9 +591,7 @@ export async function action({ request }: ActionFunctionArgs) {
         if (toolUpdate.error) {
           return toolUpdate;
         }
-        if (toolItemUpdates.error) {
-          // TODO: handle error
-        }
+
         return toolItemUpdates;
       }
     default:

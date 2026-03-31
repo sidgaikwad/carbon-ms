@@ -333,7 +333,7 @@ const ConsumableProperties = () => {
             </Badge>
           )}
           options={methodType
-            .filter((type) => type !== "Make")
+            .filter((type) => type !== "Make to Order")
             .map((type) => ({
               value: type,
               label: (
@@ -365,7 +365,7 @@ const ConsumableProperties = () => {
           supplierParts.map((method) => (
             <MethodBadge
               key={method.id}
-              type="Buy"
+              type="Purchase to Order"
               text={
                 suppliers.find((s) => s.id === method.supplierId)?.name ?? ""
               }
@@ -375,7 +375,7 @@ const ConsumableProperties = () => {
         {pickMethods.map((method) => (
           <MethodBadge
             key={method.locationId}
-            type="Pick"
+            type="Pull from Inventory"
             text={locations.find((l) => l.id === method.locationId)?.name ?? ""}
             to={path.to.consumableInventoryLocation(itemId, method.locationId)}
           />

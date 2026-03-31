@@ -94,7 +94,7 @@ export async function convertSalesOrderLinesToJobs(
   let jobsCreated = 0;
 
   for await (const line of lines) {
-    if (line.methodType === "Make" && line.itemId) {
+    if (line.methodType === "Make to Order" && line.itemId) {
       const itemManufacturing = await client
         .from("itemReplenishment")
         .select("*")

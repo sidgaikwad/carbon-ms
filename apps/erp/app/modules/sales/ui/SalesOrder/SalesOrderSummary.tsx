@@ -117,7 +117,8 @@ const SalesOrderSummary = ({
 
   // Check if there are any lines with "Make" method type that would require jobs
   const hasMakeItems =
-    routeData?.lines?.some((line) => line.methodType === "Make") ?? false;
+    routeData?.lines?.some((line) => line.methodType === "Make to Order") ??
+    false;
 
   return (
     <>
@@ -339,7 +340,7 @@ function LineItems({
       {lines.map((line) => {
         if (!line.id) return null;
 
-        const isMade = line.methodType === "Make";
+        const isMade = line.methodType === "Make to Order";
 
         const { jobLabel, jobVariant, jobs } = getSalesOrderJobStatus(
           // @ts-expect-error TS2345 - TODO: fix type
@@ -436,7 +437,9 @@ function LineItems({
                           className="flex items-center gap-2"
                         >
                           {line.saleQuantity}
-                          <MethodIcon type={line.methodType ?? "Pick"} />
+                          <MethodIcon
+                            type={line.methodType ?? "Pull from Inventory"}
+                          />
                         </Badge>
                         <Badge variant="green">
                           {formatter.format(line.unitPrice ?? 0)}{" "}
