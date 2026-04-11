@@ -41,13 +41,18 @@ const SequenceOrCustomId = forwardRef<
   ) => {
     const { t } = useLingui();
     const placeholder = placeholderProp ?? t`Next Sequence`;
-    const { getInputProps, error } = useField(name);
+    const {
+      getInputProps,
+      error,
+      isOptional: fieldIsOptional
+    } = useField(name);
     const [isCustom, setIsCustom] = useState(!!getInputProps()?.defaultValue);
+    const resolvedIsOptional = isOptional || (fieldIsOptional ?? false);
 
     return (
       <FormControl isInvalid={!!error}>
         {label && (
-          <FormLabel htmlFor={name} isOptional={isOptional}>
+          <FormLabel htmlFor={name} isOptional={resolvedIsOptional}>
             {label}
           </FormLabel>
         )}
