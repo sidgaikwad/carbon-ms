@@ -416,7 +416,7 @@ const PurchaseOrderLineForm = ({
                     />
 
                     <FormControl>
-                      <FormLabel>Description</FormLabel>
+                      <FormLabel isOptional>Description</FormLabel>
                       <Input
                         value={itemData.description}
                         onChange={(e) =>

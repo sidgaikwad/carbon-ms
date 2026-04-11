@@ -373,7 +373,7 @@ const SalesInvoiceLineForm = ({
                   />
 
                   <FormControl className="col-span-2">
-                    <FormLabel>{t`Description`}</FormLabel>
+                    <FormLabel isOptional>{t`Description`}</FormLabel>
                     <Input
                       value={itemData.description}
                       onChange={(e) =>
