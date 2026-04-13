@@ -88,7 +88,7 @@ const Item = ({
   label,
   helperText,
   isConfigured = false,
-  isOptional = false,
+  isOptional,
   type = "Part",
   typeFieldName = "itemType",
   validItemTypes,
@@ -161,7 +161,7 @@ const Item = ({
 
   const { getInputProps, error, isOptional: fieldIsOptional } = useField(name);
   const [value, setValue] = useControlField<string | undefined>(name);
-  const resolvedIsOptional = isOptional || (fieldIsOptional ?? false);
+  const resolvedIsOptional = isOptional ?? fieldIsOptional ?? false;
 
   useEffect(() => {
     if (props.value !== null && props.value !== undefined)

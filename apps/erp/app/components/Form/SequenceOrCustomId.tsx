@@ -32,7 +32,7 @@ const SequenceOrCustomId = forwardRef<
       name,
       label,
       table,
-      isOptional = false,
+      isOptional,
       helperText,
       placeholder: placeholderProp,
       ...rest
@@ -47,7 +47,7 @@ const SequenceOrCustomId = forwardRef<
       isOptional: fieldIsOptional
     } = useField(name);
     const [isCustom, setIsCustom] = useState(!!getInputProps()?.defaultValue);
-    const resolvedIsOptional = isOptional || (fieldIsOptional ?? false);
+    const resolvedIsOptional = isOptional ?? fieldIsOptional ?? false;
 
     return (
       <FormControl isInvalid={!!error}>
