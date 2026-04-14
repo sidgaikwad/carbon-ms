@@ -178,7 +178,9 @@ export async function action(args: ActionFunctionArgs) {
         const emailSignature = `Thanks,\n${user.data.firstName} ${user.data.lastName}\n${company.data.name}`;
 
         await trigger("send-email-resend", {
-          to: [user.data.email, supplierContact.data.contact?.email ?? ""],
+          to: [user.data.email, supplierContact.data.contact?.email].filter(
+            Boolean
+          ) as string[],
           cc: ccSelections?.length ? ccSelections : undefined,
           from: user.data.email,
           subject: emailSubject,
