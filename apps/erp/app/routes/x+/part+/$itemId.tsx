@@ -503,7 +503,7 @@ export default function PartRoute() {
                 <Outlet />
               </div>
             }
-            properties={<PartProperties />}
+            properties={<PartProperties key={itemId} />}
           />
         </div>
       </div>

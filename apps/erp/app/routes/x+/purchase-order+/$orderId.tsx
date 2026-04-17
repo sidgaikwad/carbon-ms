@@ -467,7 +467,7 @@ export default function PurchaseOrderRoute() {
                   </VStack>
                 </div>
               }
-              properties={<PurchaseOrderProperties />}
+              properties={<PurchaseOrderProperties key={orderId} />}
             />
           </div>
         </div>

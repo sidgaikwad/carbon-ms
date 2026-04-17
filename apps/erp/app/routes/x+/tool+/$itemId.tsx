@@ -499,7 +499,7 @@ export default function ToolRoute() {
                 <Outlet />
               </div>
             }
-            properties={<ToolProperties />}
+            properties={<ToolProperties key={itemId} />}
           />
         </div>
       </div>

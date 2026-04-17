@@ -97,7 +97,7 @@ export default function PurchaseInvoiceRoute() {
                   </VStack>
                 </div>
               }
-              properties={<PurchaseInvoiceProperties />}
+              properties={<PurchaseInvoiceProperties key={invoiceId} />}
             />
           </div>
         </div>

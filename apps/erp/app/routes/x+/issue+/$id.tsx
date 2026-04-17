@@ -185,7 +185,7 @@ export default function IssueRoute() {
                   </VStack>
                 </div>
               }
-              properties={<IssueProperties />}
+              properties={<IssueProperties key={id} />}
             />
           </div>
         </div>
