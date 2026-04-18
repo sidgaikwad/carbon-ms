@@ -24,7 +24,7 @@
         "packages/react/src/**",
         "packages/locale/locales/**/*.po"
       ],
-      "outputs": ["packages/locale/locales/**/*.js"]
+      "outputs": ["packages/locale/locales/**/*.mjs"]
     },
     "test": {
       "cache": false,
