@@ -7,6 +7,7 @@
         "dist/**",
         "build/**",
         "api/**",
+        ".vercel/**",
         "public/build/**",
         ".next/**",
         "!.next/cache/**"
