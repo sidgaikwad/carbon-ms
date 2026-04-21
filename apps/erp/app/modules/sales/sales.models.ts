@@ -181,6 +181,15 @@ export const priceOverrideValidator = z
     path: ["validTo"]
   });
 
+export const duplicatePriceListValidator = z.object({
+  sourceCustomerId: z.string().optional(),
+  sourceCustomerTypeId: z.string().optional(),
+  targetCustomerId: z.string().optional(),
+  targetCustomerTypeId: z.string().optional(),
+  conflictStrategy: z.enum(["skip", "overwrite"]),
+  overrideIds: z.string().optional()
+});
+
 export const priceResolutionInputValidator = z.object({
   itemId: z.string().min(1),
   quantity: z.number().nonnegative(),

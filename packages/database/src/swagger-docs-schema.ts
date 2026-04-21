@@ -69160,6 +69160,63 @@ export default {
         tags: ["(rpc) get_period_start_date"],
       },
     },
+    "/rpc/show_trgm": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) show_trgm"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                "": {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: [""],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) show_trgm"],
+      },
+    },
     "/rpc/create_rfq_from_model_v1": {
       post: {
         parameters: [
@@ -71863,6 +71920,47 @@ export default {
           },
         },
         tags: ["(rpc) has_valid_api_key_for_company"],
+      },
+    },
+    "/rpc/show_limit": {
+      get: {
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) show_limit"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) show_limit"],
       },
     },
     "/rpc/search_company_index": {

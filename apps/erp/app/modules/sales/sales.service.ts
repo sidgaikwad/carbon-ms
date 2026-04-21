@@ -2232,13 +2232,29 @@ export async function resolvePriceList(
     customerId?: string;
     customerTypeId?: string;
     search?: string;
-    onlyOverrides?: boolean;
     quantity?: number;
-    allCustomers?: boolean;
   }
 ): Promise<PriceListResult> {
   const date = new Date().toISOString().split("T")[0]!;
   const previewQuantity = Math.max(args.quantity ?? 1, 0);
+
+  let scopeQuery = client
+    .from("customerItemPriceOverride")
+    .select("itemId")
+    .eq("companyId", companyId)
+    .eq("active", true);
+
+  if (args.customerId) {
+    scopeQuery = scopeQuery.eq("customerId", args.customerId);
+  } else if (args.customerTypeId) {
+    scopeQuery = scopeQuery.eq("customerTypeId", args.customerTypeId);
+  }
+
+  const { data: scopedOverrides } = await scopeQuery;
+  const overriddenItemIds = (scopedOverrides ?? []).map((r) => r.itemId);
+  if (overriddenItemIds.length === 0) {
+    return { data: [], count: 0 };
+  }
 
   let itemQuery = client
     .from("item")
@@ -2246,7 +2262,8 @@ export async function resolvePriceList(
       "id, readableId, name, thumbnailPath, itemUnitSalePrice(unitSalePrice), itemCost(itemPostingGroupId, unitCost)",
       { count: "exact" }
     )
-    .eq("active", true);
+    .eq("active", true)
+    .in("id", overriddenItemIds);
 
   if (args.search) {
     itemQuery = itemQuery.or(
@@ -2254,8 +2271,6 @@ export async function resolvePriceList(
     );
   }
 
-  // itemPostingGroupId lives on itemCost, not item — pre-resolve into itemIds
-  // and keep the rest of the filters on the item query.
   const { itemIds: postingGroupItemIds, filters: filtersWithoutPostingGroup } =
     await resolvePostingGroupFilter(client, companyId, args.filters);
   if (postingGroupItemIds !== null) {
@@ -2277,10 +2292,8 @@ export async function resolvePriceList(
 
   const itemIds = items.map((i) => i.id);
 
-  let resolvedCustomerTypeId = args.allCustomers
-    ? null
-    : (args.customerTypeId ?? null);
-  if (!args.allCustomers && args.customerId && !resolvedCustomerTypeId) {
+  let resolvedCustomerTypeId = args.customerTypeId ?? null;
+  if (args.customerId && !resolvedCustomerTypeId) {
     const { data: cust } = await client
       .from("customer")
       .select("customerTypeId")
@@ -2317,49 +2330,37 @@ export async function resolvePriceList(
   const typeOverrideMap = new Map<string, OverrideEntry>();
   const allOverrideMap = new Map<string, OverrideEntry>();
 
-  if (args.allCustomers) {
-    const { data: allRows } = await client
+  if (args.customerId) {
+    const { data: rows } = await client
       .from("customerItemPriceOverride")
       .select(overrideSelect)
       .eq("companyId", companyId)
-      .is("customerId", null)
-      .is("customerTypeId", null)
+      .eq("customerId", args.customerId)
       .eq("active", true)
       .in("itemId", itemIds);
-    fillMap(allRows as unknown as ParentRow[] | null, allOverrideMap);
-  } else {
-    if (args.customerId) {
-      const { data: rows } = await client
-        .from("customerItemPriceOverride")
-        .select(overrideSelect)
-        .eq("companyId", companyId)
-        .eq("customerId", args.customerId)
-        .eq("active", true)
-        .in("itemId", itemIds);
-      fillMap(rows as unknown as ParentRow[] | null, overrideMap);
-    }
-
-    if (resolvedCustomerTypeId) {
-      const { data: rows } = await client
-        .from("customerItemPriceOverride")
-        .select(overrideSelect)
-        .eq("companyId", companyId)
-        .eq("customerTypeId", resolvedCustomerTypeId)
-        .eq("active", true)
-        .in("itemId", itemIds);
-      fillMap(rows as unknown as ParentRow[] | null, typeOverrideMap);
-    }
-
-    const { data: allRows } = await client
-      .from("customerItemPriceOverride")
-      .select(overrideSelect)
-      .eq("companyId", companyId)
-      .is("customerId", null)
-      .is("customerTypeId", null)
-      .eq("active", true)
-      .in("itemId", itemIds);
-    fillMap(allRows as unknown as ParentRow[] | null, allOverrideMap);
+    fillMap(rows as unknown as ParentRow[] | null, overrideMap);
   }
+
+  if (resolvedCustomerTypeId) {
+    const { data: rows } = await client
+      .from("customerItemPriceOverride")
+      .select(overrideSelect)
+      .eq("companyId", companyId)
+      .eq("customerTypeId", resolvedCustomerTypeId)
+      .eq("active", true)
+      .in("itemId", itemIds);
+    fillMap(rows as unknown as ParentRow[] | null, typeOverrideMap);
+  }
+
+  const { data: allRows } = await client
+    .from("customerItemPriceOverride")
+    .select(overrideSelect)
+    .eq("companyId", companyId)
+    .is("customerId", null)
+    .is("customerTypeId", null)
+    .eq("active", true)
+    .in("itemId", itemIds);
+  fillMap(allRows as unknown as ParentRow[] | null, allOverrideMap);
 
   let rulesQuery = client
     .from("pricingRule")
@@ -2528,13 +2529,9 @@ export async function resolvePriceList(
     };
   });
 
-  const filtered = args.onlyOverrides
-    ? rows.filter((r) => r.isOverridden)
-    : rows;
-
   return {
-    data: filtered,
-    count: args.onlyOverrides ? filtered.length : (count ?? 0)
+    data: rows,
+    count: count ?? 0
   };
 }
 
@@ -2825,6 +2822,126 @@ export async function deleteCustomerItemPriceOverride(
     .delete()
     .eq("id", id)
     .eq("companyId", companyId);
+}
+
+export async function duplicatePriceOverrides(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  source: { customerId?: string; customerTypeId?: string },
+  target: { customerId?: string; customerTypeId?: string },
+  options?: {
+    overrideIds?: string[];
+    conflictStrategy?: "skip" | "overwrite";
+  }
+): Promise<{
+  duplicated: number;
+  skipped: number;
+  overwritten: number;
+  error: unknown;
+}> {
+  let query = client
+    .from("customerItemPriceOverride")
+    .select(
+      "id, itemId, notes, validFrom, validTo, active, applyRulesOnTop, breaks:customerItemPriceOverrideBreak(quantity, overridePrice, active)"
+    )
+    .eq("companyId", companyId);
+
+  if (source.customerId) {
+    query = query.eq("customerId", source.customerId);
+  } else if (source.customerTypeId) {
+    query = query.eq("customerTypeId", source.customerTypeId);
+  } else {
+    query = query.is("customerId", null).is("customerTypeId", null);
+  }
+
+  if (options?.overrideIds?.length) {
+    query = query.in("id", options.overrideIds);
+  }
+
+  const { data: sourceOverrides, error: fetchError } = await query;
+  if (fetchError || !sourceOverrides) {
+    return { duplicated: 0, skipped: 0, overwritten: 0, error: fetchError };
+  }
+
+  const strategy = options?.conflictStrategy ?? "skip";
+  let duplicated = 0;
+  let skipped = 0;
+  let overwritten = 0;
+
+  let existingLookup = client
+    .from("customerItemPriceOverride")
+    .select("id, itemId")
+    .eq("companyId", companyId)
+    .in(
+      "itemId",
+      sourceOverrides.map((s) => s.itemId)
+    );
+
+  existingLookup = target.customerId
+    ? existingLookup.eq("customerId", target.customerId)
+    : target.customerTypeId
+      ? existingLookup.eq("customerTypeId", target.customerTypeId)
+      : existingLookup.is("customerId", null).is("customerTypeId", null);
+
+  const { data: existingOverrides } = await existingLookup;
+  const existingByItemId = new Map(
+    (existingOverrides ?? []).map((e) => [e.itemId, e.id])
+  );
+
+  for (const src of sourceOverrides) {
+    const breaks = (
+      (src.breaks as
+        | { quantity: number; overridePrice: number; active: boolean }[]
+        | null) ?? []
+    ).map((b) => ({
+      quantity: b.quantity,
+      overridePrice: b.overridePrice,
+      active: b.active
+    }));
+
+    if (breaks.length === 0) {
+      skipped++;
+      continue;
+    }
+
+    const existingId = existingByItemId.get(src.itemId);
+
+    if (existingId && strategy === "skip") {
+      skipped++;
+      continue;
+    }
+
+    const result = await upsertCustomerItemPriceOverride(
+      client,
+      companyId,
+      userId,
+      {
+        id: existingId ?? undefined,
+        customerId: target.customerId,
+        customerTypeId: target.customerTypeId,
+        itemId: src.itemId,
+        breaks,
+        active: src.active,
+        applyRulesOnTop: src.applyRulesOnTop ?? true,
+        notes: src.notes ?? undefined,
+        validFrom: src.validFrom ?? undefined,
+        validTo: src.validTo ?? undefined
+      }
+    );
+
+    if (result.error) {
+      return { duplicated, skipped, overwritten, error: result.error };
+    }
+
+    if (existingId) {
+      overwritten++;
+    } else {
+      duplicated++;
+    }
+  }
+
+  return { duplicated, skipped, overwritten, error: null };
 }
 
 export async function getCustomerItemPriceOverrideById(
