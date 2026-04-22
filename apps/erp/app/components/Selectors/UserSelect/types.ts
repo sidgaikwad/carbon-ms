@@ -55,6 +55,10 @@ export interface UserSelectProps {
 }
 
 export type OptionGroup = {
+  groupId?: string;
+  itemCount?: number;
+  loading?: boolean;
+  isSearchResults?: boolean;
   uid: string;
   expanded: boolean;
   items: IndividualOrGroup[];

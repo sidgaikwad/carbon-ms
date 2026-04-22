@@ -12,6 +12,7 @@ const UserTreeSelect = () => {
     groups,
     innerProps: { isMulti },
     loading,
+    onListScroll,
     onMouseOver,
     refs: { listBoxRef }
   } = useUserSelectContext();
@@ -23,6 +24,7 @@ const UserTreeSelect = () => {
       aria-multiselectable={isMulti}
       ref={listBoxRef}
       onMouseOver={onMouseOver}
+      onScroll={onListScroll}
       className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-h-[300px] my-1 flex flex-col gap-1"
     >
       {loading ? (
@@ -61,7 +63,7 @@ const Group = ({ group }: { group: OptionGroup }) => {
   } = useUserSelectContext();
 
   const isFocused = group.uid === focusedId;
-  const isExpanded = group.expanded && group.items.length > 0;
+  const isExpanded = group.expanded;
 
   return (
     // biome-ignore lint/a11y/useAriaPropsSupportedByRole: suppressed due to migration
@@ -86,13 +88,23 @@ const Group = ({ group }: { group: OptionGroup }) => {
         <ExpandIcon isExpanded={isExpanded} />
         <span className="flex-1 truncate">{group.name}</span>
         <span className="text-[10px] font-normal tabular-nums">
-          {group.items.length}
+          {group.itemCount ?? group.items.length}
         </span>
       </div>
 
       {/* Group Items */}
       {isExpanded && (
         <ul role="group" className="flex flex-col gap-0.5 py-1 pl-2">
+          {group.loading && (
+            <li className="flex items-center justify-center py-2">
+              <Spinner />
+            </li>
+          )}
+          {!group.loading && group.items.length === 0 && (
+            <li className="px-2 py-1 text-xs text-muted-foreground">
+              No members found
+            </li>
+          )}
           {group.items.map((item) => {
             const isDisabled = item.id in []; // TODO
             const isFocused = item.uid === focusedId;
