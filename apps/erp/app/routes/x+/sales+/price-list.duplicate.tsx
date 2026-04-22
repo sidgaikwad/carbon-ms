@@ -1,9 +1,12 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { duplicatePriceOverrides } from "~/modules/sales";
+import { z } from "zod";
+import { duplicatePriceListValidator } from "~/modules/sales";
+import { duplicatePriceOverrides } from "~/modules/sales/sales.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -13,32 +16,34 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const sourceCustomerId =
-    (formData.get("sourceCustomerId") as string) || undefined;
-  const sourceCustomerTypeId =
-    (formData.get("sourceCustomerTypeId") as string) || undefined;
-  const targetCustomerId =
-    (formData.get("targetCustomerId") as string) || undefined;
-  const targetCustomerTypeId =
-    (formData.get("targetCustomerTypeId") as string) || undefined;
-  const conflictStrategy =
-    (formData.get("conflictStrategy") as "skip" | "overwrite") || "skip";
+  const validation = await validator(duplicatePriceListValidator).validate(
+    formData
+  );
 
-  let overrideIds: string[] | undefined;
-  const overrideIdsRaw = formData.get("overrideIds") as string;
-  if (overrideIdsRaw) {
-    try {
-      overrideIds = JSON.parse(overrideIdsRaw);
-    } catch {
-      // ignore parse error
-    }
+  if (validation.error) {
+    return validationError(validation.error);
   }
 
-  if (!targetCustomerId && !targetCustomerTypeId) {
-    throw redirect(
-      `${path.to.salesPriceList}?${getParams(request)}`,
-      await flash(request, error(null, "Please select a target scope"))
-    );
+  const {
+    sourceCustomerId,
+    sourceCustomerTypeId,
+    targetCustomerId,
+    targetCustomerTypeId,
+    conflictStrategy
+  } = validation.data;
+
+  let overrideIds: string[] | undefined;
+  if (validation.data.overrideIds) {
+    try {
+      const parsed = z
+        .array(z.string())
+        .parse(JSON.parse(validation.data.overrideIds));
+      overrideIds = parsed.length ? parsed : undefined;
+    } catch {
+      return validationError({
+        fieldErrors: { overrideIds: "Invalid override IDs" }
+      });
+    }
   }
 
   const result = await duplicatePriceOverrides(

@@ -270,11 +270,15 @@ export const auditConfig = {
     priceOverride: {
       label: "Price Override",
       tables: {
-        customerItemPriceOverride: { role: "root" }
+        customerItemPriceOverride: { role: "root" },
+        customerItemPriceOverrideBreak: {
+          entityIdColumn: "customerItemPriceOverrideId"
+        }
       }
     },
+
     priceOverrideBreak: {
-      label: "Quantity Break",
+      label: "Price Override Break",
       tables: {
         customerItemPriceOverrideBreak: { role: "root" }
       }

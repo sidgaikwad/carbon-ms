@@ -113,7 +113,15 @@ export function DuplicatePriceListModal({
 
               {scopeType === "customer" && (
                 <>
-                  <Customer name="targetCustomerId" label={t`Customer`} />
+                  <Customer
+                    name="targetCustomerId"
+                    label={t`Customer`}
+                    exclude={
+                      sourceScope.customerId
+                        ? [sourceScope.customerId]
+                        : undefined
+                    }
+                  />
                   <Hidden name="targetCustomerTypeId" value="" />
                 </>
               )}
@@ -123,6 +131,11 @@ export function DuplicatePriceListModal({
                   <CustomerType
                     name="targetCustomerTypeId"
                     label={t`Customer Type`}
+                    exclude={
+                      sourceScope.customerTypeId
+                        ? [sourceScope.customerTypeId]
+                        : undefined
+                    }
                   />
                   <Hidden name="targetCustomerId" value="" />
                 </>
