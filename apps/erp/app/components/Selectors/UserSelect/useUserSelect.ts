@@ -1,8 +1,12 @@
 import { useDisclosure, useOutsideClick } from "@carbon/react";
 import type { PostgrestError } from "@supabase/supabase-js";
 import debounce from "lodash/debounce";
-import words from "lodash/words";
-import type { AriaAttributes, ChangeEvent, KeyboardEvent } from "react";
+import type {
+  AriaAttributes,
+  ChangeEvent,
+  KeyboardEvent,
+  UIEvent
+} from "react";
 import {
   useCallback,
   useEffect,
@@ -11,7 +15,6 @@ import {
   useRef,
   useState
 } from "react";
-import { useFetcher } from "react-router";
 import type { Group } from "~/modules/users";
 import { path } from "~/utils/path";
 
@@ -45,6 +48,56 @@ const defaultProps = {
   onCancel: () => {}
 };
 
+const TOP_LEVEL_PAGE_SIZE = 20;
+const SEARCH_LIMIT = 30;
+
+type ApiUser = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  avatarUrl: string | null;
+};
+
+type ApiGroup = {
+  id: string;
+  name: string;
+  companyId: string;
+  isEmployeeTypeGroup: boolean;
+  isCustomerOrgGroup: boolean;
+  isCustomerTypeGroup: boolean;
+  isSupplierOrgGroup: boolean;
+  isSupplierTypeGroup: boolean;
+  users: ApiUser[];
+};
+
+type TopLevelGroup = {
+  id: string;
+  name: string;
+  memberCount: number;
+};
+
+type TopLevelResponse = {
+  groups: TopLevelGroup[];
+  hasMore: boolean;
+  nextOffset: number | null;
+  error?: PostgrestError;
+};
+
+type GroupMembersResponse = {
+  group: ApiGroup | null;
+  subgroups: ApiGroup[];
+  users: ApiUser[];
+  error?: PostgrestError;
+};
+
+type SearchResponse = {
+  groups: ApiGroup[];
+  users: ApiUser[];
+  error?: PostgrestError;
+};
+
 export default function useUserSelect(props: UserSelectProps) {
   /* Inner Props */
   const innerProps = useMemo(
@@ -54,17 +107,6 @@ export default function useUserSelect(props: UserSelectProps) {
     }),
     [props]
   );
-
-  /* Data Fetching */
-  const groupsFetcher = useFetcher<{
-    groups: Group[];
-    errors?: PostgrestError;
-  }>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    groupsFetcher.load(path.to.api.groupsByType(innerProps.type));
-  }, [innerProps.type]);
 
   /* Refs */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -85,6 +127,30 @@ export default function useUserSelect(props: UserSelectProps) {
   const [filteredOptionGroups, setFilteredOptionGroups] = useState<
     OptionGroup[]
   >([]);
+  const [topLevelGroups, setTopLevelGroups] = useState<TopLevelGroup[]>([]);
+  const [groupItemsById, setGroupItemsById] = useState<
+    Record<string, IndividualOrGroup[]>
+  >({});
+  const [groupDetailsById, setGroupDetailsById] = useState<
+    Record<string, { users: ApiUser[]; subgroups: ApiGroup[] }>
+  >({});
+  const [groupLoadingById, setGroupLoadingById] = useState<
+    Record<string, boolean>
+  >({});
+  const [expandedGroupIds, setExpandedGroupIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [isLoadingTopLevel, setIsLoadingTopLevel] = useState(false);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const [hasMoreTopLevelGroups, setHasMoreTopLevelGroups] = useState(true);
+  const [nextTopLevelOffset, setNextTopLevelOffset] = useState(0);
+  const [errors, setErrors] = useState<PostgrestError | undefined>(undefined);
+  const searchRequestId = useRef(0);
+  const isLoadingTopLevelRef = useRef(false);
+  const loadedGroupIdsRef = useRef<Set<string>>(new Set());
+  const loadingGroupIdsRef = useRef<Set<string>>(new Set());
+  const prefetchedGroupIdsRef = useRef<Set<string>>(new Set());
 
   /* Focus */
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -97,130 +163,300 @@ export default function useUserSelect(props: UserSelectProps) {
         : {}
     );
 
-  // Convert the tree from the server into a format that is easier to work with
-  const optionGroups = useMemo<OptionGroup[]>(() => {
-    const makeGroupItems = (
-      group: Group,
-      groupId: string
-    ): IndividualOrGroup[] => {
-      const result: IndividualOrGroup[] = [];
+  const buildGroupsApiUrl = useCallback(
+    (params: Record<string, string | number | undefined>) => {
+      const url = new URL(
+        path.to.api.groupsByType(innerProps.type),
+        "http://localhost"
+      );
 
-      if (!innerProps.usersOnly) {
-        result.push({
-          ...group.data,
-          uid: getOptionId(groupId, group.data.id),
-          label: group.data.name || "",
-          children: group.children
-        });
-
-        const subgroups = group.children.map((subgroup) => ({
-          ...subgroup.data,
-          uid: getOptionId(groupId, subgroup.data.id),
-          label: subgroup.data.name || "",
-          children: subgroup.children
-        }));
-
-        result.push(...subgroups);
+      if (!innerProps.type) {
+        url.searchParams.delete("type");
       }
 
-      const users = group.data.users.map((user) => {
-        return {
-          ...user,
-          uid: getOptionId(groupId, user.id),
-          label: user.fullName || ""
-        };
-      });
+      for (const [key, value] of Object.entries(params)) {
+        if (value === undefined || value === "") {
+          url.searchParams.delete(key);
+        } else {
+          url.searchParams.set(key, String(value));
+        }
+      }
 
-      result.push(...users);
+      return `${url.pathname}${url.search}`;
+    },
+    [innerProps.type]
+  );
 
-      return result;
-    };
+  const loadTopLevelGroups = useCallback(
+    async (offset: number, replace: boolean) => {
+      if (isLoadingTopLevelRef.current) return;
 
-    // TODO filter for employeeTypes only and allowedUsers
+      isLoadingTopLevelRef.current = true;
+      setIsLoadingTopLevel(true);
+      try {
+        const response = await fetch(
+          buildGroupsApiUrl({
+            mode: "topLevel",
+            limit: TOP_LEVEL_PAGE_SIZE,
+            offset
+          }),
+          { headers: { Accept: "application/json" } }
+        );
+        const payload = (await response.json()) as TopLevelResponse;
+        if (!response.ok || payload.error) {
+          setErrors(payload.error);
+          return;
+        }
 
-    return !groupsFetcher.data || !groupsFetcher.data.groups
-      ? []
-      : groupsFetcher.data.groups.reduce<OptionGroup[]>((acc, group) => {
-          if (
-            !innerProps.usersOnly ||
-            (group.data.users && group.data.users.length)
-          ) {
-            const uid = getGroupId(instanceId, group.data.id);
-            return acc.concat({
-              uid,
-              expanded: false,
-              items: makeGroupItems(group as Group, uid),
-              name: group.data.name || ""
-            });
-          }
-          return acc;
-        }, []);
-  }, [groupsFetcher.data, innerProps.usersOnly, instanceId]);
+        setErrors(undefined);
+        setTopLevelGroups((prev) => {
+          if (replace) return payload.groups ?? [];
 
-  /* Pre-populate controlled component after data loads */
+          const seen = new Set(prev.map((group) => group.id));
+          return prev.concat(
+            (payload.groups ?? []).filter((group) => !seen.has(group.id))
+          );
+        });
+        setHasMoreTopLevelGroups(payload.hasMore);
+        setNextTopLevelOffset(payload.nextOffset ?? 0);
+      } catch {
+        // ignore transient UI fetch errors
+      } finally {
+        isLoadingTopLevelRef.current = false;
+        setIsLoadingTopLevel(false);
+      }
+    },
+    [buildGroupsApiUrl]
+  );
+
   useEffect(() => {
-    if (innerProps.value && optionGroups && optionGroups.length > 0) {
-      const flattened = optionGroups.reduce<IndividualOrGroup[]>(
-        (acc, group) => acc.concat(group.items),
-        []
-      );
-      if (Array.isArray(innerProps.value)) {
-        const selections = flattened.reduce<SelectionItemsById>((acc, item) => {
-          if (innerProps.value!.includes(item.id)) {
-            return {
-              ...acc,
-              [item.id]: item
-            };
+    setTopLevelGroups([]);
+    setGroupItemsById({});
+    setGroupDetailsById({});
+    setGroupLoadingById({});
+    setExpandedGroupIds(new Set());
+    setHasMoreTopLevelGroups(true);
+    setNextTopLevelOffset(0);
+    isLoadingTopLevelRef.current = false;
+    loadedGroupIdsRef.current = new Set();
+    loadingGroupIdsRef.current = new Set();
+    prefetchedGroupIdsRef.current = new Set();
+    setIsSearchActive(false);
+    setIsSearchLoading(false);
+    setErrors(undefined);
+
+    void loadTopLevelGroups(0, true);
+  }, [loadTopLevelGroups]);
+
+  const optionGroups = useMemo<OptionGroup[]>(
+    () =>
+      topLevelGroups.map((group) => {
+        const uid = getGroupId(instanceId, group.id);
+        return {
+          uid,
+          groupId: group.id,
+          expanded: expandedGroupIds.has(group.id),
+          items: groupItemsById[group.id] ?? [],
+          itemCount: group.memberCount,
+          loading: groupLoadingById[group.id] ?? false,
+          name: group.name
+        };
+      }),
+    [
+      expandedGroupIds,
+      groupItemsById,
+      groupLoadingById,
+      instanceId,
+      topLevelGroups
+    ]
+  );
+
+  useEffect(() => {
+    if (!isSearchActive) {
+      setFilteredOptionGroups(optionGroups);
+    }
+  }, [isSearchActive, optionGroups]);
+
+  const loadGroupMembers = useCallback(
+    async (groupId: string, groupUid: string) => {
+      if (
+        loadedGroupIdsRef.current.has(groupId) ||
+        loadingGroupIdsRef.current.has(groupId)
+      ) {
+        return;
+      }
+
+      loadingGroupIdsRef.current.add(groupId);
+      setGroupLoadingById((prev) => ({ ...prev, [groupId]: true }));
+      try {
+        const response = await fetch(
+          buildGroupsApiUrl({ mode: "members", groupId }),
+          { headers: { Accept: "application/json" } }
+        );
+        const payload = (await response.json()) as GroupMembersResponse;
+        if (!response.ok || payload.error) {
+          setErrors(payload.error);
+          return;
+        }
+        if (!payload.group) {
+          setGroupItemsById((prev) => ({ ...prev, [groupId]: [] }));
+          setGroupDetailsById((prev) => ({
+            ...prev,
+            [groupId]: { users: [], subgroups: [] }
+          }));
+          return;
+        }
+
+        const users = payload.users ?? [];
+        const subgroups = payload.subgroups ?? [];
+        const nextItems = makeGroupItems(
+          payload.group,
+          subgroups,
+          groupUid,
+          innerProps.usersOnly
+        );
+
+        setErrors(undefined);
+        setGroupItemsById((prev) => ({
+          ...prev,
+          [groupId]: nextItems
+        }));
+        setGroupDetailsById((prev) => ({
+          ...prev,
+          [groupId]: {
+            users,
+            subgroups
           }
+        }));
+        loadedGroupIdsRef.current.add(groupId);
+      } catch {
+        // ignore transient UI fetch errors
+      } finally {
+        loadingGroupIdsRef.current.delete(groupId);
+        setGroupLoadingById((prev) => ({ ...prev, [groupId]: false }));
+      }
+    },
+    [buildGroupsApiUrl, innerProps.usersOnly]
+  );
+
+  const runServerSearch = useCallback(
+    async (query: string) => {
+      const search = query.trim();
+      if (!search) {
+        setIsSearchActive(false);
+        setIsSearchLoading(false);
+        setFilteredOptionGroups(optionGroups);
+        return;
+      }
+
+      const requestId = searchRequestId.current + 1;
+      searchRequestId.current = requestId;
+
+      setIsSearchActive(true);
+      setIsSearchLoading(true);
+      try {
+        const response = await fetch(
+          buildGroupsApiUrl({
+            mode: "search",
+            q: search,
+            limit: SEARCH_LIMIT
+          }),
+          { headers: { Accept: "application/json" } }
+        );
+        const payload = (await response.json()) as SearchResponse;
+        if (requestId !== searchRequestId.current) return;
+
+        if (!response.ok || payload.error) {
+          setErrors(payload.error);
+          setFilteredOptionGroups([]);
+          return;
+        }
+
+        const items = makeSearchItems(
+          payload.groups ?? [],
+          payload.users ?? [],
+          instanceId
+        );
+
+        setErrors(undefined);
+        setFilteredOptionGroups(
+          items.length > 0
+            ? [
+                {
+                  uid: `${instanceId}_search`,
+                  expanded: true,
+                  isSearchResults: true,
+                  items,
+                  itemCount: items.length,
+                  name: "Results"
+                }
+              ]
+            : []
+        );
+      } catch {
+        if (requestId === searchRequestId.current) {
+          setFilteredOptionGroups([]);
+        }
+      } finally {
+        if (requestId === searchRequestId.current) {
+          setIsSearchLoading(false);
+        }
+      }
+    },
+    [buildGroupsApiUrl, instanceId, optionGroups]
+  );
+
+  /* Pre-populate controlled component by id lookup */
+  useEffect(() => {
+    const incoming = innerProps.value;
+    const ids = Array.isArray(incoming) ? incoming : incoming ? [incoming] : [];
+
+    if (ids.length === 0) return;
+
+    let active = true;
+    const resolveSelections = async () => {
+      try {
+        const response = await fetch(
+          buildGroupsApiUrl({
+            mode: "byIds",
+            ids: ids.join(",")
+          }),
+          { headers: { Accept: "application/json" } }
+        );
+        const payload = (await response.json()) as SearchResponse;
+        if (!active || !response.ok || payload.error) return;
+
+        const options = makeSearchItems(
+          payload.groups ?? [],
+          payload.users ?? [],
+          `${instanceId}_selected`
+        );
+        const optionsById = new Map(
+          options.map((option) => [option.id, option])
+        );
+
+        const selections = ids.reduce<SelectionItemsById>((acc, id) => {
+          const item = optionsById.get(id);
+          if (item) acc[id] = item;
           return acc;
         }, {});
+
         if (Object.keys(selections).length > 0) {
           setSelectionItemsById(selections);
         }
-      } else {
-        const selection = flattened.find(
-          (item) => item.id === innerProps.value
-        );
-        if (selection) {
-          setSelectionItemsById({
-            [selection?.id]: selection
-          });
-        }
+      } catch {
+        // ignore prefilling fetch errors
       }
-    }
-  }, [optionGroups, innerProps.value]);
+    };
 
-  const makeFilteredOptionGroups = useCallback(
-    (query?: string): OptionGroup[] =>
-      optionGroups.reduce((acc, group) => {
-        if (query?.trim()) {
-          const matches = group.items.filter((item) =>
-            stringContainsTerm(item.label, query)
-          );
-          if (matches && matches.length) {
-            return acc.concat({
-              ...group,
-              expanded: true,
-              items: matches
-            });
-          } else {
-            return acc;
-          }
-        } else {
-          return acc.concat(group);
-        }
-      }, [] as OptionGroup[]),
-    [optionGroups]
-  );
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    setFilteredOptionGroups(makeFilteredOptionGroups());
-  }, [optionGroups, makeFilteredOptionGroups, setFilteredOptionGroups]);
+    void resolveSelections();
+    return () => {
+      active = false;
+    };
+  }, [buildGroupsApiUrl, innerProps.value, instanceId]);
 
   /* Event Handlers */
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const commit = useCallback(() => {
     dropdown.onClose();
     setFocusedId(null);
@@ -240,11 +476,12 @@ export default function useUserSelect(props: UserSelectProps) {
     }
   }, []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const clear = useCallback(() => {
-    setFilteredOptionGroups(makeFilteredOptionGroups());
+    setIsSearchActive(false);
+    setIsSearchLoading(false);
+    setFilteredOptionGroups(optionGroups);
     setControlledValue("");
-  }, [makeFilteredOptionGroups, setControlledValue, setFilteredOptionGroups]);
+  }, [optionGroups]);
 
   const resetFocus = useCallback(() => {
     setFocusedId(null);
@@ -254,26 +491,61 @@ export default function useUserSelect(props: UserSelectProps) {
     }
   }, [focusInput]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onGroupExpand = useCallback(
-    (uid: string) =>
-      setFilteredOptionGroups((previousGroups) =>
-        previousGroups.map((group) =>
-          group.uid === uid ? { ...group, expanded: true } : group
-        )
-      ),
-    [setFilteredOptionGroups]
+    (uid: string) => {
+      const group = optionGroups.find((g) => g.uid === uid);
+      if (!group?.groupId) return;
+
+      setExpandedGroupIds((previous) => new Set(previous).add(group.groupId!));
+      void loadGroupMembers(group.groupId, uid);
+    },
+    [loadGroupMembers, optionGroups]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onGroupCollapse = useCallback(
-    (uid: string) =>
-      setFilteredOptionGroups((previousGroups) =>
-        previousGroups.map((group) =>
-          group.uid === uid ? { ...group, expanded: false } : group
-        )
-      ),
-    [setFilteredOptionGroups]
+    (uid: string) => {
+      const group = optionGroups.find((g) => g.uid === uid);
+      if (!group?.groupId) return;
+
+      setExpandedGroupIds((previous) => {
+        const next = new Set(previous);
+        next.delete(group.groupId!);
+        return next;
+      });
+    },
+    [optionGroups]
+  );
+
+  const onGroupPrefetch = useCallback(
+    (uid: string) => {
+      const group = optionGroups.find((g) => g.uid === uid);
+      if (!group?.groupId) return;
+      if (group.expanded) return;
+      if (prefetchedGroupIdsRef.current.has(group.groupId)) return;
+
+      prefetchedGroupIdsRef.current.add(group.groupId);
+      void loadGroupMembers(group.groupId, uid);
+    },
+    [loadGroupMembers, optionGroups]
+  );
+
+  const onListScroll = useCallback(
+    (event: UIEvent<HTMLDivElement>) => {
+      if (isSearchActive) return;
+      if (isLoadingTopLevel || !hasMoreTopLevelGroups) return;
+
+      const target = event.currentTarget;
+      if (target.scrollTop + target.clientHeight >= target.scrollHeight - 24) {
+        void loadTopLevelGroups(nextTopLevelOffset, false);
+      }
+    },
+    [
+      hasMoreTopLevelGroups,
+      isLoadingTopLevel,
+      isSearchActive,
+      loadTopLevelGroups,
+      nextTopLevelOffset
+    ]
   );
 
   const isExpanded = useCallback(
@@ -325,7 +597,6 @@ export default function useUserSelect(props: UserSelectProps) {
     [getLastNode, resetFocus]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const hasParent = useCallback(
     (id: string) => {
       const { parentId } = focusableNodes.current[id];
@@ -364,7 +635,6 @@ export default function useUserSelect(props: UserSelectProps) {
     [filteredOptionGroups]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const setFocus = useCallback(
     (command: string) => {
       let nextFocusedId = focusedId;
@@ -406,13 +676,12 @@ export default function useUserSelect(props: UserSelectProps) {
     ]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const debouncedInputChange = useMemo(() => {
     return debounce((search: string) => {
-      setFilteredOptionGroups(makeFilteredOptionGroups(search));
+      void runServerSearch(search);
       resetFocus();
     }, 240);
-  }, [makeFilteredOptionGroups, resetFocus, setFilteredOptionGroups]);
+  }, [resetFocus, runServerSearch]);
 
   const onInputFocus = useCallback(() => {
     dropdown.onOpen();
@@ -453,7 +722,6 @@ export default function useUserSelect(props: UserSelectProps) {
     [innerProps]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onSelect = useCallback(
     (selectionItem?: IndividualOrGroup) => {
       if (selectionItem === undefined) return;
@@ -487,7 +755,6 @@ export default function useUserSelect(props: UserSelectProps) {
     ]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onDeselect = useCallback(
     (selectionItem: IndividualOrGroup) => {
       if (selectionItem === undefined) return;
@@ -548,7 +815,6 @@ export default function useUserSelect(props: UserSelectProps) {
     }
   }, [clear, innerProps.isMulti, removeSelections]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onInputChange = useCallback(
     ({ target }: ChangeEvent<HTMLInputElement>): void => {
       setControlledValue(target.value);
@@ -556,11 +822,18 @@ export default function useUserSelect(props: UserSelectProps) {
 
       if (target.value?.length > 0) {
         dropdown.onOpen();
-      } else if (!innerProps.isMulti) {
-        removeSelections();
+      } else {
+        debouncedInputChange.cancel();
+        setIsSearchActive(false);
+        setIsSearchLoading(false);
+        setFilteredOptionGroups(optionGroups);
+        if (!innerProps.isMulti) {
+          removeSelections();
+        }
       }
     },
     [
+      optionGroups,
       debouncedInputChange,
       dropdown,
       innerProps.isMulti,
@@ -569,12 +842,33 @@ export default function useUserSelect(props: UserSelectProps) {
     ]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onExplode = useCallback(
-    (selectionItem: IndividualOrGroup) => {
+    async (selectionItem: IndividualOrGroup) => {
       if (!("users" in selectionItem)) return;
 
-      const { id, users, children } = selectionItem;
+      const { id } = selectionItem;
+      const selectedGroup = optionGroups.find((group) => group.groupId === id);
+      if (selectedGroup?.groupId) {
+        await loadGroupMembers(selectedGroup.groupId, selectedGroup.uid);
+      }
+
+      const detail = groupDetailsById[id];
+      const users = detail?.users ?? selectionItem.users ?? [];
+      const children =
+        detail?.subgroups.map((group) => ({
+          data: {
+            id: group.id,
+            name: group.name,
+            companyId: group.companyId,
+            isEmployeeTypeGroup: group.isEmployeeTypeGroup,
+            isCustomerOrgGroup: group.isCustomerOrgGroup,
+            isCustomerTypeGroup: group.isCustomerTypeGroup,
+            isSupplierOrgGroup: group.isSupplierOrgGroup,
+            isSupplierTypeGroup: group.isSupplierTypeGroup,
+            users: group.users
+          },
+          children: []
+        })) ?? selectionItem.children;
 
       setSelectionItemsById((prevSelectionItems) => {
         if (id in prevSelectionItems) {
@@ -604,7 +898,7 @@ export default function useUserSelect(props: UserSelectProps) {
         return prevSelectionItems;
       });
     },
-    [onChange, setSelectionItemsById]
+    [groupDetailsById, loadGroupMembers, onChange, optionGroups]
   );
 
   const onKeyDown = useCallback(
@@ -754,8 +1048,8 @@ export default function useUserSelect(props: UserSelectProps) {
   return {
     aria,
     groups: filteredOptionGroups,
-    errors: groupsFetcher.data?.errors,
-    loading: groupsFetcher.state === "loading",
+    errors,
+    loading: isLoadingTopLevel || isSearchLoading,
     selectionItemsById,
     // focus
     instanceId,
@@ -779,6 +1073,8 @@ export default function useUserSelect(props: UserSelectProps) {
     onKeyDown,
     onGroupCollapse,
     onGroupExpand,
+    onGroupPrefetch,
+    onListScroll,
     onInputChange,
     onInputBlur,
     onInputFocus,
@@ -837,16 +1133,82 @@ function makeSelectionItemsById(
   return result;
 }
 
-function stringContainsTerm(input: string, filter: string) {
-  const i = input.toLocaleLowerCase().trim();
-  const f = filter.toLocaleLowerCase().trim();
-  if (i.startsWith(f)) {
-    return true;
+function toGroupTree(group: ApiGroup): Group {
+  return {
+    data: {
+      id: group.id,
+      name: group.name,
+      companyId: group.companyId,
+      isEmployeeTypeGroup: group.isEmployeeTypeGroup,
+      isCustomerOrgGroup: group.isCustomerOrgGroup,
+      isCustomerTypeGroup: group.isCustomerTypeGroup,
+      isSupplierOrgGroup: group.isSupplierOrgGroup,
+      isSupplierTypeGroup: group.isSupplierTypeGroup,
+      users: group.users
+    },
+    children: []
+  };
+}
+
+function toUserItem(user: ApiUser, uidBase: string): IndividualOrGroup {
+  return {
+    ...user,
+    uid: getOptionId(uidBase, user.id),
+    label: user.fullName
+  };
+}
+
+function toGroupItem(
+  group: ApiGroup,
+  uidBase: string,
+  children: ApiGroup[] = []
+): IndividualOrGroup {
+  return {
+    ...group,
+    uid: getOptionId(uidBase, group.id),
+    label: group.name,
+    children: children.map(toGroupTree)
+  };
+}
+
+function makeGroupItems(
+  group: ApiGroup,
+  subgroups: ApiGroup[],
+  groupUid: string,
+  usersOnly: boolean
+): IndividualOrGroup[] {
+  const result: IndividualOrGroup[] = [];
+
+  if (!usersOnly) {
+    result.push(toGroupItem(group, groupUid, subgroups));
+    result.push(
+      ...subgroups.map((subgroup) => toGroupItem(subgroup, groupUid))
+    );
   }
 
-  const filterTokens = words(f);
-  const inputTokens = words(i);
-  return filterTokens.every((fToken) =>
-    inputTokens.some((iToken) => iToken.startsWith(fToken))
-  );
+  result.push(...group.users.map((user) => toUserItem(user, groupUid)));
+  return result;
+}
+
+function makeSearchItems(
+  groups: ApiGroup[],
+  users: ApiUser[],
+  uidBase: string
+) {
+  const seen = new Set<string>();
+  const result: IndividualOrGroup[] = [];
+
+  for (const group of groups) {
+    if (seen.has(group.id)) continue;
+    seen.add(group.id);
+    result.push(toGroupItem(group, uidBase));
+  }
+
+  for (const user of users) {
+    if (seen.has(user.id)) continue;
+    seen.add(user.id);
+    result.push(toUserItem(user, uidBase));
+  }
+
+  return result;
 }
