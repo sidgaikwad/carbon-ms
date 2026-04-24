@@ -19,6 +19,7 @@ export interface ColumnDragData {
 }
 
 export type DisplaySettings = {
+  hideEmptyWorkCenters: boolean;
   showCustomer: boolean;
   showDescription: boolean;
   showDueDate: boolean;
