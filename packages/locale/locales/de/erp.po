@@ -7692,7 +7692,7 @@ msgstr "Mehr"
 #: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:173
 #: apps/erp/app/modules/production/ui/Procedures/ProcedureHeader.tsx:80
 #: apps/erp/app/modules/production/ui/Schedule/Kanban/components/ItemCard.tsx:183
-#: apps/erp/app/modules/production/ui/Schedule/Kanban/components/JobCard.tsx:287
+#: apps/erp/app/modules/production/ui/Schedule/Kanban/components/JobCard.tsx:202
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderHeader.tsx:153
 #: apps/erp/app/modules/purchasing/ui/PurchasingRfq/PurchasingRFQHeader.tsx:109
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierHeader.tsx:154
@@ -7711,7 +7711,7 @@ msgid "More options"
 msgstr "Weitere Optionen"
 
 #: apps/erp/app/modules/production/ui/Schedule/Kanban/components/ItemCard.tsx:173
-#: apps/erp/app/modules/production/ui/Schedule/Kanban/components/JobCard.tsx:277
+#: apps/erp/app/modules/production/ui/Schedule/Kanban/components/JobCard.tsx:192
 msgid "Move item"
 msgstr "Element verschieben"
 
@@ -11501,10 +11501,6 @@ msgstr "Console-PIN festlegen"
 #: apps/erp/app/routes/x+/settings+/sales.tsx:762
 msgid "Set default markup percentages for each cost category on new quote lines"
 msgstr "Legen Sie standardmäßige Aufschlagsprozentsätze für jede Kostenkategorie auf neuen Angebotszeilen fest"
-
-#: apps/erp/app/modules/production/ui/Schedule/Kanban/components/JobCard.tsx:381
-msgid "Set due date"
-msgstr ""
 
 #: apps/erp/app/modules/sales/ui/Pricing/PriceOverridesTable.tsx:289
 msgid "Set Pricing"
