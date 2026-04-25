@@ -2,11 +2,6 @@ import { error, success } from "@carbon/auth";
 import { deleteAuthAccount } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash, requireAuthSession } from "@carbon/auth/session.server";
-import {
-  deactivateCustomer,
-  deactivateEmployee,
-  deactivateSupplier
-} from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
 
@@ -305,8 +300,6 @@ export async function createCustomerAccount(
   if (contactUpdate.error) {
     if (isNewUser) {
       await deleteAuthAccount(serviceRole, userId);
-    } else {
-      await deactivateCustomer(serviceRole, userId, companyId);
     }
     return { success: false, message: contactUpdate.error.message };
   }
@@ -315,7 +308,10 @@ export async function createCustomerAccount(
     if (isNewUser) {
       await deleteAuthAccount(serviceRole, userId);
     } else {
-      await deactivateCustomer(serviceRole, userId, companyId);
+      await client
+        .from("customerContact")
+        .update({ userId: null })
+        .eq("id", id);
     }
     return { success: false, message: customerAccountInsert.error.message };
   }
@@ -324,7 +320,14 @@ export async function createCustomerAccount(
     if (isNewUser) {
       await deleteAuthAccount(serviceRole, userId);
     } else {
-      await deactivateCustomer(serviceRole, userId, companyId);
+      await Promise.all([
+        client.from("customerContact").update({ userId: null }).eq("id", id),
+        serviceRole
+          .from("customerAccount")
+          .delete()
+          .eq("id", userId)
+          .eq("companyId", companyId)
+      ]);
     }
     return { success: false, message: inviteInsert.error.message };
   }
@@ -371,6 +374,20 @@ export async function createEmployeeAccount(
 
   if (user.data) {
     userId = user.data.id;
+
+    const existingEmployee = await client
+      .from("employee")
+      .select("id")
+      .eq("id", userId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+
+    if (existingEmployee.data) {
+      return {
+        success: false,
+        message: "This user is already an employee in this company"
+      };
+    }
   } else {
     isNewUser = true;
     const createSupabaseUser = await serviceRole.auth.admin.createUser({
@@ -424,8 +441,6 @@ export async function createEmployeeAccount(
   if (employeeInsert.error) {
     if (isNewUser) {
       await deleteAuthAccount(serviceRole, userId);
-    } else {
-      await deactivateEmployee(serviceRole, userId, companyId);
     }
     return { success: false, message: employeeInsert.error.message };
   }
@@ -434,7 +449,11 @@ export async function createEmployeeAccount(
     if (isNewUser) {
       await deleteAuthAccount(serviceRole, userId);
     } else {
-      await deactivateEmployee(serviceRole, userId, companyId);
+      await serviceRole
+        .from("employee")
+        .delete()
+        .eq("id", userId)
+        .eq("companyId", companyId);
     }
     return { success: false, message: jobInsert.error.message };
   }
@@ -443,7 +462,18 @@ export async function createEmployeeAccount(
     if (isNewUser) {
       await deleteAuthAccount(serviceRole, userId);
     } else {
-      await deactivateEmployee(serviceRole, userId, companyId);
+      await Promise.all([
+        serviceRole
+          .from("employee")
+          .delete()
+          .eq("id", userId)
+          .eq("companyId", companyId),
+        serviceRole
+          .from("employeeJob")
+          .delete()
+          .eq("id", userId)
+          .eq("companyId", companyId)
+      ]);
     }
     return { success: false, message: inviteInsert.error.message };
   }
@@ -537,8 +567,6 @@ export async function createSupplierAccount(
   if (contactUpdate.error) {
     if (isNewUser) {
       await deleteAuthAccount(serviceRole, userId);
-    } else {
-      await deactivateSupplier(serviceRole, userId, companyId);
     }
     return { success: false, message: contactUpdate.error.message };
   }
@@ -547,7 +575,10 @@ export async function createSupplierAccount(
     if (isNewUser) {
       await deleteAuthAccount(serviceRole, userId);
     } else {
-      await deactivateSupplier(serviceRole, userId, companyId);
+      await client
+        .from("supplierContact")
+        .update({ userId: null })
+        .eq("id", id);
     }
     return { success: false, message: supplierAccountInsert.error.message };
   }
@@ -556,7 +587,14 @@ export async function createSupplierAccount(
     if (isNewUser) {
       await deleteAuthAccount(serviceRole, userId);
     } else {
-      await deactivateSupplier(serviceRole, userId, companyId);
+      await Promise.all([
+        client.from("supplierContact").update({ userId: null }).eq("id", id),
+        serviceRole
+          .from("supplierAccount")
+          .delete()
+          .eq("id", userId)
+          .eq("companyId", companyId)
+      ]);
     }
     return { success: false, message: inviteInsert.error.message };
   }
