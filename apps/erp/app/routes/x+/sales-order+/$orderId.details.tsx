@@ -157,8 +157,6 @@ export default function SalesOrderDetailsRoute() {
 
   if (!orderData) throw new Error("Could not find order data");
 
-  const isReadOnly = isSalesOrderLocked(orderData.salesOrder.status);
-
   const shipmentFormRef = useRef<SalesOrderShipmentFormRef>(null);
 
   const handleEditShippingCost = () => {
@@ -215,7 +213,6 @@ export default function SalesOrderDetailsRoute() {
             attachments={resolvedFiles}
             id={orderId}
             type="Sales Order"
-            isReadOnly={isReadOnly}
           />
         )}
       </DeferredFiles>

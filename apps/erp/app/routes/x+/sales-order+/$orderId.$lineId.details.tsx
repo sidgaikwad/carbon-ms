@@ -265,7 +265,6 @@ export default function EditSalesOrderLineRoute() {
             itemId={line?.itemId}
             modelUpload={line ?? undefined}
             type="Sales Order"
-            isReadOnly={isReadOnly}
           />
         )}
       </DeferredFiles>

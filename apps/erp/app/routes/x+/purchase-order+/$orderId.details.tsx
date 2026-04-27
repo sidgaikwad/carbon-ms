@@ -215,8 +215,6 @@ export default function PurchaseOrderBasicRoute() {
 
   const { company } = useUser();
 
-  const isReadOnly = isPurchaseOrderLocked(orderData.purchaseOrder.status);
-
   return (
     <>
       <SupplierInteractionState interaction={orderData.interaction} />
@@ -236,7 +234,6 @@ export default function PurchaseOrderBasicRoute() {
             id={orderId}
             interactionId={orderData.purchaseOrder.supplierInteractionId!}
             type="Purchase Order"
-            isReadOnly={isReadOnly}
           />
         )}
       </DeferredFiles>
