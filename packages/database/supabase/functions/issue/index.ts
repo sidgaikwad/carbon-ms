@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
+import { getLocalTimeZone, parseDate, today } from "npm:@internationalized/date";
 import { Transaction } from "kysely";
 import { z } from "npm:zod@^3.24.1";
 
@@ -13,6 +14,88 @@ import {
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { TrackedEntityAttributes } from "../lib/utils.ts";
+
+type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
+
+type InventoryShelfLifeSettings = {
+  expiredEntityPolicy?: ExpiredEntityPolicy;
+};
+
+/**
+ * Resolve the company's expired-entity policy from companySettings JSONB.
+ * Defaults to 'Block' when the row or key is absent so the safe behavior
+ * is the default.
+ */
+async function getExpiredEntityPolicy(
+  trx: Transaction<DB>,
+  companyId: string
+): Promise<ExpiredEntityPolicy> {
+  const row = await trx
+    .selectFrom("companySettings")
+    .select("inventoryShelfLife")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  const blob = (row?.inventoryShelfLife ??
+    null) as InventoryShelfLifeSettings | null;
+  return blob?.expiredEntityPolicy ?? "Block";
+}
+
+/**
+ * Apply the policy to a list of trackedEntity rows about to be consumed.
+ * Returns:
+ *   { ok: true }                 - no expiries, or warn-only with no expired
+ *   { ok: true, warning }        - warn-only, with expired ids in the message
+ *   { ok: false, reason }        - block (or block-without-override), caller
+ *                                  should raise an error and refuse the op
+ *
+ * Caller is responsible for the override flow:
+ *   - In 'BlockWithOverride' mode, if the request payload supplies
+ *     overrideExpired=true + overrideReason, treat the result as ok and
+ *     emit an audit-log row.
+ */
+function checkExpiredEntities(
+  entities: { id: string; expirationDate: string | null }[],
+  policy: ExpiredEntityPolicy,
+  override: { allowed: boolean; reason: string | null }
+): { ok: true; warning?: string } | { ok: false; reason: string } {
+  const todayLocal = today(getLocalTimeZone());
+  const expired = entities.filter((e) => {
+    if (!e.expirationDate) return false;
+    try {
+      return parseDate(e.expirationDate).compare(todayLocal) < 0;
+    } catch {
+      return false;
+    }
+  });
+  if (expired.length === 0) return { ok: true };
+
+  const ids = expired.map((e) => e.id).join(", ");
+
+  if (policy === "Warn") {
+    return {
+      ok: true,
+      warning: `Consumed ${expired.length} expired tracked entit${
+        expired.length === 1 ? "y" : "ies"
+      }: ${ids}`,
+    };
+  }
+
+  if (
+    policy === "BlockWithOverride" &&
+    override.allowed &&
+    override.reason &&
+    override.reason.trim().length > 0
+  ) {
+    return { ok: true };
+  }
+
+  return {
+    ok: false,
+    reason: `Cannot consume expired tracked entit${
+      expired.length === 1 ? "y" : "ies"
+    }: ${ids}`,
+  };
+}
 
 async function issueJobOperationMaterials(
   trx: Transaction<DB>,
@@ -305,6 +388,8 @@ const payloadValidator = z.discriminatedUnion("type", [
         quantity: z.number(),
       })
     ),
+    overrideExpired: z.boolean().optional(),
+    overrideReason: z.string().optional(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -341,6 +426,8 @@ const payloadValidator = z.discriminatedUnion("type", [
         quantity: z.number(),
       })
     ),
+    overrideExpired: z.boolean().optional(),
+    overrideReason: z.string().optional(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -770,6 +857,8 @@ serve(async (req: Request) => {
                 quantity: 1,
                 status: "Reserved",
                 attributes: trackedEntity.attributes,
+                itemId: trackedEntity.itemId ?? null,
+                expirationDate: trackedEntity.expirationDate ?? null,
                 companyId,
                 createdBy: userId,
               })
@@ -1164,6 +1253,8 @@ serve(async (req: Request) => {
           itemId,
           parentTrackedEntityId,
           children,
+          overrideExpired,
+          overrideReason,
           companyId,
           userId,
         } = validatedPayload;
@@ -1182,6 +1273,8 @@ serve(async (req: Request) => {
             "Either materialId or both jobOperationId and itemId must be provided"
           );
         }
+
+        let expiredWarning: string | undefined;
 
         const splitEntities = await db.transaction().execute(async (trx) => {
           const trackedEntities = await trx
@@ -1209,6 +1302,23 @@ serve(async (req: Request) => {
 
           if (trackedEntities.some((entity) => entity.status !== "Available")) {
             throw new Error("Tracked entities are not available");
+          }
+
+          // Expiry policy gate. Reads companySettings.inventoryShelfLife.
+          const expiredPolicy = await getExpiredEntityPolicy(trx, companyId);
+          const expiredCheck = checkExpiredEntities(
+            trackedEntities.map((e) => ({
+              id: e.id,
+              expirationDate: e.expirationDate,
+            })),
+            expiredPolicy,
+            { allowed: !!overrideExpired, reason: overrideReason ?? null }
+          );
+          if (!expiredCheck.ok) {
+            throw new Error(expiredCheck.reason);
+          }
+          if (expiredCheck.warning) {
+            expiredWarning = expiredCheck.warning;
           }
 
           let jobMaterial: Awaited<
@@ -1492,6 +1602,8 @@ serve(async (req: Request) => {
                   quantity: remainingQuantity,
                   status: trackedEntity.status ?? "Available",
                   attributes: trackedEntity.attributes,
+                  itemId: trackedEntity.itemId ?? trackedEntity.sourceDocumentId,
+                  expirationDate: trackedEntity.expirationDate ?? null,
                   companyId,
                   createdBy: userId,
                 })
@@ -1683,6 +1795,7 @@ serve(async (req: Request) => {
           JSON.stringify({
             success: true,
             splitEntities,
+            warning: expiredWarning,
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -2251,6 +2364,8 @@ serve(async (req: Request) => {
           itemId,
           unitOfMeasureCode,
           children,
+          overrideExpired,
+          overrideReason,
           companyId,
           userId,
         } = validatedPayload;
@@ -2258,6 +2373,8 @@ serve(async (req: Request) => {
         if (children.length === 0) {
           throw new Error("At least one tracked entity is required");
         }
+
+        let expiredWarning: string | undefined;
 
         const splitEntities = await db.transaction().execute(async (trx) => {
           // Get the maintenance dispatch to find the location
@@ -2318,6 +2435,23 @@ serve(async (req: Request) => {
 
           if (trackedEntities.some((entity) => entity.status !== "Available")) {
             throw new Error("Some tracked entities are not available");
+          }
+
+          // Expiry policy gate.
+          const expiredPolicy = await getExpiredEntityPolicy(trx, companyId);
+          const expiredCheck = checkExpiredEntities(
+            trackedEntities.map((e) => ({
+              id: e.id,
+              expirationDate: e.expirationDate,
+            })),
+            expiredPolicy,
+            { allowed: !!overrideExpired, reason: overrideReason ?? null }
+          );
+          if (!expiredCheck.ok) {
+            throw new Error(expiredCheck.reason);
+          }
+          if (expiredCheck.warning) {
+            expiredWarning = expiredCheck.warning;
           }
 
           // Get item details
@@ -2436,6 +2570,8 @@ serve(async (req: Request) => {
                   quantity: remainingQuantity,
                   status: trackedEntity.status ?? "Available",
                   attributes: trackedEntity.attributes,
+                  itemId: trackedEntity.itemId ?? trackedEntity.sourceDocumentId,
+                  expirationDate: trackedEntity.expirationDate ?? null,
                   companyId,
                   createdBy: userId,
                 })
@@ -2608,6 +2744,7 @@ serve(async (req: Request) => {
             success: true,
             message: "Material issued successfully",
             splitEntities,
+            warning: expiredWarning,
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -3026,9 +3163,22 @@ serve(async (req: Request) => {
     );
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    // Error.prototype properties (message, name, stack) aren't enumerable,
+    // so a plain JSON.stringify(err) produces "{}" and clients lose the
+    // actual reason (e.g. "Cannot consume expired tracked entity ...").
+    // Pull the message out explicitly.
+    const message =
+      err instanceof Error
+        ? err.message
+        : typeof err === "string"
+          ? err
+          : "Unexpected error";
+    return new Response(
+      JSON.stringify({ success: false, message }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      }
+    );
   }
 });

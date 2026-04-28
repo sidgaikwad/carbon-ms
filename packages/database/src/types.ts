@@ -2935,6 +2935,7 @@ export type Database = {
           includeThumbnailsOnPurchasingPdfs: boolean
           includeThumbnailsOnSalesPdfs: boolean
           inventoryJobCompletedNotificationGroup: string[]
+          inventoryShelfLife: Json
           jobTravelerIncludeWorkInstructions: boolean
           kanbanOutput: Database["public"]["Enums"]["kanbanOutput"]
           maintenanceAdvanceDays: number
@@ -2975,6 +2976,7 @@ export type Database = {
           includeThumbnailsOnPurchasingPdfs?: boolean
           includeThumbnailsOnSalesPdfs?: boolean
           inventoryJobCompletedNotificationGroup?: string[]
+          inventoryShelfLife?: Json
           jobTravelerIncludeWorkInstructions?: boolean
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           maintenanceAdvanceDays?: number
@@ -3015,6 +3017,7 @@ export type Database = {
           includeThumbnailsOnPurchasingPdfs?: boolean
           includeThumbnailsOnSalesPdfs?: boolean
           inventoryJobCompletedNotificationGroup?: string[]
+          inventoryShelfLife?: Json
           jobTravelerIncludeWorkInstructions?: boolean
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           maintenanceAdvanceDays?: number
@@ -11628,6 +11631,206 @@ export type Database = {
           },
           {
             foreignKeyName: "itemSamplingPlan_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      itemShelfLife: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          days: number | null
+          inheritEarliestInputExpiry: boolean
+          itemId: string
+          mode: Database["public"]["Enums"]["shelfLifeMode"]
+          triggerProcessId: string | null
+          triggerTiming: Database["public"]["Enums"]["shelfLifeTriggerTiming"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          days?: number | null
+          inheritEarliestInputExpiry?: boolean
+          itemId: string
+          mode: Database["public"]["Enums"]["shelfLifeMode"]
+          triggerProcessId?: string | null
+          triggerTiming?: Database["public"]["Enums"]["shelfLifeTriggerTiming"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          days?: number | null
+          inheritEarliestInputExpiry?: boolean
+          itemId?: string
+          mode?: Database["public"]["Enums"]["shelfLifeMode"]
+          triggerProcessId?: string | null
+          triggerTiming?: Database["public"]["Enums"]["shelfLifeTriggerTiming"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itemShelfLife_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_triggerProcessId_fkey"
+            columns: ["triggerProcessId"]
+            isOneToOne: false
+            referencedRelation: "process"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_triggerProcessId_fkey"
+            columns: ["triggerProcessId"]
+            isOneToOne: false
+            referencedRelation: "processes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -35194,48 +35397,6 @@ export type Database = {
           },
         ]
       }
-      searchIndex_AFufEUeRzndtVNnkDmh3Kx: {
-        Row: {
-          createdAt: string
-          description: string | null
-          entityId: string
-          entityType: string
-          id: number
-          link: string
-          metadata: Json | null
-          searchVector: unknown
-          tags: string[] | null
-          title: string
-          updatedAt: string | null
-        }
-        Insert: {
-          createdAt?: string
-          description?: string | null
-          entityId: string
-          entityType: string
-          id?: number
-          link: string
-          metadata?: Json | null
-          searchVector?: unknown
-          tags?: string[] | null
-          title: string
-          updatedAt?: string | null
-        }
-        Update: {
-          createdAt?: string
-          description?: string | null
-          entityId?: string
-          entityType?: string
-          id?: number
-          link?: string
-          metadata?: Json | null
-          searchVector?: unknown
-          tags?: string[] | null
-          title?: string
-          updatedAt?: string | null
-        }
-        Relationships: []
-      }
       searchIndexRegistry: {
         Row: {
           companyId: string
@@ -41694,7 +41855,9 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          expirationDate: string | null
           id: string
+          itemId: string | null
           quantity: number
           readableId: string | null
           sourceDocument: string
@@ -41707,7 +41870,9 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          expirationDate?: string | null
           id?: string
+          itemId?: string | null
           quantity: number
           readableId?: string | null
           sourceDocument: string
@@ -41720,7 +41885,9 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          expirationDate?: string | null
           id?: string
+          itemId?: string | null
           quantity?: number
           readableId?: string | null
           sourceDocument?: string
@@ -41791,6 +41958,48 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "trackedEntity_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -60218,6 +60427,10 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      resolve_shelf_life_start_for_receipt: {
+        Args: { p_item_id: string; p_receipt_id: string }
+        Returns: string
+      }
       search_company_index: {
         Args: {
           p_company_id: string
@@ -60235,6 +60448,21 @@ export type Database = {
           tags: string[]
           title: string
         }[]
+      }
+      set_shelf_life_for_operation: {
+        Args: {
+          p_event: Database["public"]["Enums"]["shelfLifeTriggerTiming"]
+          p_job_operation_id: string
+        }
+        Returns: undefined
+      }
+      set_shelf_life_on_operation_done: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      set_shelf_life_on_operation_started: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
@@ -60401,6 +60629,10 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      sync_propagate_item_readable_id_to_tracked_entity: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       sync_protect_system_required_actions: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
@@ -60498,6 +60730,7 @@ export type Database = {
       }
       update_receipt_line_serial_tracking: {
         Args: {
+          p_expiry_date?: string
           p_index: number
           p_receipt_id: string
           p_receipt_line_id: string
@@ -60978,6 +61211,8 @@ export type Database = {
       samplingPlanType: "All" | "First" | "Percentage" | "AQL"
       samplingStandard: "ANSI_Z1_4" | "ISO_2859_1"
       serviceType: "Internal" | "External"
+      shelfLifeMode: "Fixed Duration" | "Calculated" | "Set on Receipt"
+      shelfLifeTriggerTiming: "Before" | "After"
       shipmentSourceDocument:
         | "Sales Order"
         | "Sales Invoice"
@@ -62196,6 +62431,8 @@ export const Constants = {
       samplingPlanType: ["All", "First", "Percentage", "AQL"],
       samplingStandard: ["ANSI_Z1_4", "ISO_2859_1"],
       serviceType: ["Internal", "External"],
+      shelfLifeMode: ["Fixed Duration", "Calculated", "Set on Receipt"],
+      shelfLifeTriggerTiming: ["Before", "After"],
       shipmentSourceDocument: [
         "Sales Order",
         "Sales Invoice",

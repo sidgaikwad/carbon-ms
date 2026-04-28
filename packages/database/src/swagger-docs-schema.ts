@@ -27228,6 +27228,204 @@ export default {
         tags: ["purchasingRfqFavorite"]
       }
     },
+    "/itemShelfLife": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.mode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.days"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.triggerProcessId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.triggerTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.inheritEarliestInputExpiry"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/itemShelfLife"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["itemShelfLife"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.itemShelfLife"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["itemShelfLife"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.mode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.days"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.triggerProcessId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.triggerTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.inheritEarliestInputExpiry"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["itemShelfLife"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.mode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.days"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.triggerProcessId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.triggerTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemShelfLife.inheritEarliestInputExpiry"
+          },
+          {
+            $ref: "#/parameters/body.itemShelfLife"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["itemShelfLife"]
+      }
+    },
     "/maintenanceDispatch": {
       get: {
         parameters: [
@@ -42988,6 +43186,12 @@ export default {
             $ref: "#/parameters/rowFilter.trackedEntity.readableId"
           },
           {
+            $ref: "#/parameters/rowFilter.trackedEntity.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.trackedEntity.expirationDate"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -43080,6 +43284,12 @@ export default {
             $ref: "#/parameters/rowFilter.trackedEntity.readableId"
           },
           {
+            $ref: "#/parameters/rowFilter.trackedEntity.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.trackedEntity.expirationDate"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -43124,6 +43334,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.trackedEntity.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.trackedEntity.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.trackedEntity.expirationDate"
           },
           {
             $ref: "#/parameters/body.trackedEntity"
@@ -65368,6 +65584,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.samplingStandard"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.inventoryShelfLife"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -65541,6 +65760,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.samplingStandard"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.inventoryShelfLife"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -65666,6 +65888,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.samplingStandard"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.inventoryShelfLife"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -66971,6 +67196,45 @@ export default {
           }
         },
         tags: ["(rpc) get_training_assignments_by_user"]
+      }
+    },
+    "/rpc/set_shelf_life_for_operation": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_event: {
+                  format: '"shelfLifeTriggerTiming"',
+                  type: "string"
+                },
+                p_job_operation_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_job_operation_id", "p_event"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) set_shelf_life_for_operation"]
       }
     },
     "/rpc/create_rfq_from_models_v2": {
@@ -68640,6 +68904,51 @@ export default {
         tags: ["(rpc) get_training_assignment_status"]
       }
     },
+    "/rpc/set_shelf_life_on_operation_done": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) set_shelf_life_on_operation_done"]
+      }
+    },
     "/rpc/update_receipt_line_serial_tracking": {
       post: {
         parameters: [
@@ -68649,6 +68958,10 @@ export default {
             required: true,
             schema: {
               properties: {
+                p_expiry_date: {
+                  format: "text",
+                  type: "string"
+                },
                 p_index: {
                   format: "int32",
                   type: "integer"
@@ -69359,6 +69672,45 @@ export default {
           }
         },
         tags: ["(rpc) xid_decode"]
+      }
+    },
+    "/rpc/resolve_shelf_life_start_for_receipt": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_receipt_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_item_id", "p_receipt_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) resolve_shelf_life_start_for_receipt"]
       }
     },
     "/rpc/check_api_key_rate_limit": {
@@ -70295,6 +70647,51 @@ export default {
         tags: ["(rpc) get_primary_key_column"]
       }
     },
+    "/rpc/set_shelf_life_on_operation_started": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) set_shelf_life_on_operation_started"]
+      }
+    },
     "/rpc/groups_for_user": {
       post: {
         parameters: [
@@ -70909,6 +71306,51 @@ export default {
           }
         },
         tags: ["(rpc) storage_unit_block_location_change_with_children"]
+      }
+    },
+    "/rpc/sync_propagate_item_readable_id_to_tracked_entity": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_propagate_item_readable_id_to_tracked_entity"]
       }
     },
     "/rpc/get_audit_log": {
@@ -87586,6 +88028,82 @@ export default {
       },
       type: "object"
     },
+    itemShelfLife: {
+      required: [
+        "itemId",
+        "mode",
+        "triggerTiming",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "inheritEarliestInputExpiry"
+      ],
+      properties: {
+        itemId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        mode: {
+          enum: ["Fixed Duration", "Calculated", "Set on Receipt"],
+          format: 'public."shelfLifeMode"',
+          type: "string"
+        },
+        days: {
+          format: "numeric",
+          type: "number"
+        },
+        triggerProcessId: {
+          description:
+            "Note:\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        triggerTiming: {
+          default: "After",
+          enum: ["Before", "After"],
+          format: 'public."shelfLifeTriggerTiming"',
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        },
+        inheritEarliestInputExpiry: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        }
+      },
+      type: "object"
+    },
     maintenanceDispatch: {
       required: [
         "id",
@@ -95008,6 +95526,16 @@ export default {
         },
         readableId: {
           format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        expirationDate: {
+          format: "date",
           type: "string"
         }
       },
@@ -105967,7 +106495,8 @@ export default {
         "timeCardEnabled",
         "updateLeadTimesOnReceipt",
         "enforceInspectionFourEyes",
-        "samplingStandard"
+        "samplingStandard",
+        "inventoryShelfLife"
       ],
       properties: {
         id: {
@@ -106183,6 +106712,9 @@ export default {
           enum: ["ANSI_Z1_4", "ISO_2859_1"],
           format: 'public."samplingStandard"',
           type: "string"
+        },
+        inventoryShelfLife: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -121074,6 +121606,87 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.itemShelfLife": {
+      name: "itemShelfLife",
+      description: "itemShelfLife",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/itemShelfLife"
+      }
+    },
+    "rowFilter.itemShelfLife.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemShelfLife.mode": {
+      name: "mode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemShelfLife.days": {
+      name: "days",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemShelfLife.triggerProcessId": {
+      name: "triggerProcessId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemShelfLife.triggerTiming": {
+      name: "triggerTiming",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemShelfLife.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemShelfLife.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemShelfLife.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemShelfLife.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemShelfLife.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemShelfLife.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemShelfLife.inheritEarliestInputExpiry": {
+      name: "inheritEarliestInputExpiry",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.maintenanceDispatch": {
       name: "maintenanceDispatch",
       description: "maintenanceDispatch",
@@ -129416,6 +130029,18 @@ export default {
     },
     "rowFilter.trackedEntity.readableId": {
       name: "readableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.trackedEntity.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.trackedEntity.expirationDate": {
+      name: "expirationDate",
       required: false,
       in: "query",
       type: "string"
@@ -141949,6 +142574,12 @@ export default {
     },
     "rowFilter.companySettings.samplingStandard": {
       name: "samplingStandard",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.inventoryShelfLife": {
+      name: "inventoryShelfLife",
       required: false,
       in: "query",
       type: "string"

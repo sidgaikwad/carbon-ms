@@ -11,7 +11,7 @@
     "./worker": "./src/inngest/worker.ts"
   },
   "scripts": {
-    "dev:jobs": "npx inngest-cli@latest dev -u http://localhost:3000/api/inngest",
+    "dev:jobs": "npx inngest-cli@latest dev --no-discovery -u http://localhost:3000/api/inngest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -38,6 +38,7 @@
     "sst": "4.6.9",
     "supabase": "2.84.5",
     "tsup": "8.5.1",
+    "inngest": "3.52.7",
     "zod": "3.25.76"
   },
   "devDependencies": {

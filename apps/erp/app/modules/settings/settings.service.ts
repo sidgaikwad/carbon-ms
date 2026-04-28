@@ -477,6 +477,33 @@ export async function updateKanbanOutputSetting(
     .eq("id", companyId);
 }
 
+export async function updateShelfLifeSettings(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  settings: {
+    /** undefined disables expiry badges company-wide. */
+    nearExpiryWarningDays: number | undefined;
+    /** Seed for the "Shelf-life (days)" input on new items. */
+    defaultShelfLifeDays: number;
+    /** MIN expiry scope for Calculated-mode finished products. */
+    calculatedInputScope: "AllInputs" | "ManagedInputsOnly";
+    /** Policy enforced when an operator consumes an expired entity. */
+    expiredEntityPolicy: "Warn" | "Block" | "BlockWithOverride";
+  }
+) {
+  return client
+    .from("companySettings")
+    .update({
+      inventoryShelfLife: {
+        nearExpiryWarningDays: settings.nearExpiryWarningDays ?? null,
+        defaultShelfLifeDays: settings.defaultShelfLifeDays,
+        calculatedInputScope: settings.calculatedInputScope,
+        expiredEntityPolicy: settings.expiredEntityPolicy
+      }
+    })
+    .eq("id", companyId);
+}
+
 export async function updateMetricSettings(
   client: SupabaseClient<Database>,
   companyId: string,

@@ -11,14 +11,18 @@ import { InventoryDetails } from "~/modules/inventory";
 import type { ToolSummary, UnitOfMeasureListItem } from "~/modules/items";
 import {
   getItemQuantities,
+  getItemShelfLife,
   getItemStorageUnitQuantities,
   getPickMethod,
-  pickMethodValidator,
-  upsertPickMethod
+  pickMethodWithShelfLifeValidator,
+  type shelfLifeModes,
+  upsertPickMethod,
+  upsertPickMethodWithShelfLife
 } from "~/modules/items";
 import { PickMethodForm } from "~/modules/items/ui/Item";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores/items";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -129,10 +133,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const shelfLife = await getItemShelfLife(client, itemId);
+
   return {
     toolInventory: toolInventory.data,
     itemStorageUnitQuantities: itemStorageUnitQuantities.data,
     quantities: quantities.data,
+    shelfLife: shelfLife.data,
     itemId,
     locationId
   };
@@ -140,7 +147,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -148,33 +155,47 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  // validate with toolsValidator
-  const validation = await validator(pickMethodValidator).validate(formData);
+  const validation = await validator(pickMethodWithShelfLifeValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const { ...update } = validation.data;
+  const {
+    shelfLifeMode,
+    shelfLifeDays,
+    shelfLifeTriggerProcessId,
+    shelfLifeTriggerTiming,
+    shelfLifeInheritEarliestInputExpiry,
+    ...pickMethodFields
+  } = validation.data;
 
-  const updatePickMethod = await upsertPickMethod(client, {
-    ...update,
-    itemId,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
-  });
-  if (updatePickMethod.error) {
+  try {
+    await upsertPickMethodWithShelfLife(getDatabaseClient(), {
+      itemId,
+      locationId: pickMethodFields.locationId,
+      defaultStorageUnitId: pickMethodFields.defaultStorageUnitId,
+      customFields: setCustomFields(formData),
+      userId,
+      shelfLife: {
+        mode: shelfLifeMode,
+        days: shelfLifeDays,
+        triggerProcessId: shelfLifeTriggerProcessId,
+        triggerTiming: shelfLifeTriggerTiming,
+        inheritEarliestInputExpiry: shelfLifeInheritEarliestInputExpiry
+      }
+    });
+  } catch (err) {
     throw redirect(
       path.to.tool(itemId),
-      await flash(
-        request,
-        error(updatePickMethod.error, "Failed to update tool inventory")
-      )
+      await flash(request, error(err, "Failed to update tool inventory"))
     );
   }
 
   throw redirect(
-    path.to.toolInventoryLocation(itemId, update.locationId),
+    path.to.toolInventoryLocation(itemId, pickMethodFields.locationId),
     await flash(request, success("Updated tool inventory"))
   );
 }
@@ -185,8 +206,13 @@ export default function ToolInventoryRoute() {
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.toolRoot);
 
-  const { toolInventory, itemStorageUnitQuantities, quantities, itemId } =
-    useLoaderData<typeof loader>();
+  const {
+    toolInventory,
+    itemStorageUnitQuantities,
+    quantities,
+    shelfLife,
+    itemId
+  } = useLoaderData<typeof loader>();
 
   const toolData = useRouteData<{
     toolSummary: ToolSummary;
@@ -197,22 +223,34 @@ export default function ToolInventoryRoute() {
   const initialValues = {
     ...toolInventory,
     defaultStorageUnitId: toolInventory.defaultStorageUnitId ?? undefined,
+    shelfLifeMode: shelfLife?.mode as
+      | (typeof shelfLifeModes)[number]
+      | undefined,
+    shelfLifeDays: shelfLife?.days ?? undefined,
+    shelfLifeTriggerProcessId: shelfLife?.triggerProcessId ?? undefined,
+    shelfLifeTriggerTiming: shelfLife?.triggerTiming ?? undefined,
+    shelfLifeInheritEarliestInputExpiry:
+      shelfLife?.inheritEarliestInputExpiry ?? false,
     ...getCustomFields(toolInventory.customFields ?? {})
   };
 
   const [items] = useItems();
-  const itemTrackingType = items.find((i) => i.id === itemId)?.itemTrackingType;
+  const item = items.find((i) => i.id === itemId);
+  const itemTrackingType = item?.itemTrackingType;
+  const replenishmentSystem = item?.replenishmentSystem ?? null;
 
   const storageUnits = useStorageUnits(toolInventory?.locationId);
 
   return (
     <VStack spacing={2} className="p-2">
       <PickMethodForm
-        key={initialValues.itemId}
+        key={`${initialValues.itemId}-${itemTrackingType ?? "Inventory"}`}
         initialValues={initialValues}
         locations={sharedToolsData?.locations ?? []}
         storageUnits={storageUnits.options}
         type="Part"
+        itemTrackingType={itemTrackingType ?? "Inventory"}
+        replenishmentSystem={replenishmentSystem}
       />
       <InventoryDetails
         itemStorageUnitQuantities={itemStorageUnitQuantities}
