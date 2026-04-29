@@ -24,7 +24,9 @@ export async function action({ request }: ActionFunctionArgs) {
     jobOperationId,
     itemId,
     parentTrackedEntityId,
-    children
+    children,
+    overrideExpired,
+    overrideReason
   } = validation.data;
 
   const serviceRole = await getCarbonServiceRole();
@@ -36,6 +38,8 @@ export async function action({ request }: ActionFunctionArgs) {
       itemId,
       parentTrackedEntityId,
       children,
+      overrideExpired,
+      overrideReason,
       companyId,
       userId
     }
@@ -43,17 +47,33 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (issue.error) {
     console.error(issue.error);
-    return data(
-      { success: false, message: "Failed to issue material" },
-      { status: 400 }
-    );
+    // Supabase wraps non-2xx edge-fn responses in FunctionsHttpError where
+    // the actual body lives on `context`. Try to pull our { message } out;
+    // fall back to the wrapper's own message if parsing fails.
+    let message = "Failed to issue material";
+    const ctx = (issue.error as { context?: Response })?.context;
+    if (ctx && typeof ctx.json === "function") {
+      try {
+        const body = await ctx.clone().json();
+        if (body && typeof body.message === "string") {
+          message = body.message;
+        }
+      } catch {
+        /* fall through to default */
+      }
+    } else if ((issue.error as { message?: string }).message) {
+      message = (issue.error as { message: string }).message;
+    }
+    return data({ success: false, message }, { status: 400 });
   }
 
   const splitEntities = issue.data?.splitEntities || [];
+  const warning = issue.data?.warning as string | undefined;
 
   return {
     success: true,
     message: "Material issued successfully",
-    splitEntities
+    splitEntities,
+    warning
   };
 }

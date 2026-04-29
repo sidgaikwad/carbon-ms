@@ -129,6 +129,8 @@ export const path = {
       qualityKpi: (key: string) => generatePath(`${api}/quality/kpi/${key}`),
       procedures: `${api}/production/procedures`,
       processes: `${api}/resources/processes`,
+      itemRecipeProcesses: (itemId: string) =>
+        generatePath(`${api}/items/${itemId}/recipe-processes`),
       productionKpi: (key: string) =>
         generatePath(`${api}/production/kpi/${key}`),
       quoteBillOfMaterials: (
@@ -180,6 +182,10 @@ export const path = {
       storageTypes: `${api}/inventory/storage-types`,
       storageUnitDescendants: (id: string) =>
         generatePath(`${api}/inventory/storage-unit-descendants?id=${id}`),
+      storageUnitChildren: (parentId: string) =>
+        generatePath(
+          `${api}/inventory/storage-unit-children?parentId=${parentId}`
+        ),
       supplierContacts: (id: string) =>
         generatePath(`${api}/purchasing/supplier-contacts/${id}`),
       supplierLocations: (id: string) =>
@@ -1632,6 +1638,7 @@ export const path = {
     traceability: `${x}/traceability`,
     traceabilityGraph: `${x}/traceability/graph`,
     trackedEntities: `${x}/inventory/tracked-entities`,
+    trackedEntityExpiry: `${x}/inventory/tracked-entity/expiry`,
     training: (id: string) => generatePath(`${x}/training/${id}`),
     trainings: `${x}/resources/training`,
     trainingQuestion: (id: string, questionId: string) =>

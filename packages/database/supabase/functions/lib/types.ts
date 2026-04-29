@@ -2935,6 +2935,7 @@ export type Database = {
           includeThumbnailsOnPurchasingPdfs: boolean
           includeThumbnailsOnSalesPdfs: boolean
           inventoryJobCompletedNotificationGroup: string[]
+          inventoryShelfLife: Json
           jobTravelerIncludeWorkInstructions: boolean
           kanbanOutput: Database["public"]["Enums"]["kanbanOutput"]
           maintenanceAdvanceDays: number
@@ -2975,6 +2976,7 @@ export type Database = {
           includeThumbnailsOnPurchasingPdfs?: boolean
           includeThumbnailsOnSalesPdfs?: boolean
           inventoryJobCompletedNotificationGroup?: string[]
+          inventoryShelfLife?: Json
           jobTravelerIncludeWorkInstructions?: boolean
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           maintenanceAdvanceDays?: number
@@ -3015,6 +3017,7 @@ export type Database = {
           includeThumbnailsOnPurchasingPdfs?: boolean
           includeThumbnailsOnSalesPdfs?: boolean
           inventoryJobCompletedNotificationGroup?: string[]
+          inventoryShelfLife?: Json
           jobTravelerIncludeWorkInstructions?: boolean
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           maintenanceAdvanceDays?: number
@@ -4348,6 +4351,7 @@ export type Database = {
           customFields: Json | null
           defaultCc: string[] | null
           embedding: unknown
+          eori: string | null
           fax: string | null
           id: string
           logo: string | null
@@ -4374,6 +4378,7 @@ export type Database = {
           customFields?: Json | null
           defaultCc?: string[] | null
           embedding?: unknown
+          eori?: string | null
           fax?: string | null
           id?: string
           logo?: string | null
@@ -4400,6 +4405,7 @@ export type Database = {
           customFields?: Json | null
           defaultCc?: string[] | null
           embedding?: unknown
+          eori?: string | null
           fax?: string | null
           id?: string
           logo?: string | null
@@ -5524,6 +5530,8 @@ export type Database = {
         Row: {
           companyId: string
           customerId: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           shippingCustomerContactId: string | null
           shippingCustomerId: string | null
           shippingCustomerLocationId: string | null
@@ -5535,6 +5543,8 @@ export type Database = {
         Insert: {
           companyId: string
           customerId: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           shippingCustomerContactId?: string | null
           shippingCustomerId?: string | null
           shippingCustomerLocationId?: string | null
@@ -5546,6 +5556,8 @@ export type Database = {
         Update: {
           companyId?: string
           customerId?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           shippingCustomerContactId?: string | null
           shippingCustomerId?: string | null
           shippingCustomerLocationId?: string | null
@@ -11628,6 +11640,206 @@ export type Database = {
           },
           {
             foreignKeyName: "itemSamplingPlan_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      itemShelfLife: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          days: number | null
+          inheritEarliestInputExpiry: boolean
+          itemId: string
+          mode: Database["public"]["Enums"]["shelfLifeMode"]
+          triggerProcessId: string | null
+          triggerTiming: Database["public"]["Enums"]["shelfLifeTriggerTiming"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          days?: number | null
+          inheritEarliestInputExpiry?: boolean
+          itemId: string
+          mode: Database["public"]["Enums"]["shelfLifeMode"]
+          triggerProcessId?: string | null
+          triggerTiming?: Database["public"]["Enums"]["shelfLifeTriggerTiming"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          days?: number | null
+          inheritEarliestInputExpiry?: boolean
+          itemId?: string
+          mode?: Database["public"]["Enums"]["shelfLifeMode"]
+          triggerProcessId?: string | null
+          triggerTiming?: Database["public"]["Enums"]["shelfLifeTriggerTiming"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itemShelfLife_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_triggerProcessId_fkey"
+            columns: ["triggerProcessId"]
+            isOneToOne: false
+            referencedRelation: "process"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_triggerProcessId_fkey"
+            columns: ["triggerProcessId"]
+            isOneToOne: false
+            referencedRelation: "processes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemShelfLife_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -25706,6 +25918,8 @@ export type Database = {
           companyId: string
           customFields: Json | null
           id: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           locationId: string | null
           shippingMethodId: string | null
           shippingTermId: string | null
@@ -25717,6 +25931,8 @@ export type Database = {
           companyId: string
           customFields?: Json | null
           id: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           shippingMethodId?: string | null
           shippingTermId?: string | null
@@ -25728,6 +25944,8 @@ export type Database = {
           companyId?: string
           customFields?: Json | null
           id?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           shippingMethodId?: string | null
           shippingTermId?: string | null
@@ -26737,6 +26955,8 @@ export type Database = {
           deliveryDate: string | null
           dropShipment: boolean
           id: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           locationId: string | null
           notes: string | null
           receiptPromisedDate: string | null
@@ -26757,6 +26977,8 @@ export type Database = {
           deliveryDate?: string | null
           dropShipment?: boolean
           id: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           notes?: string | null
           receiptPromisedDate?: string | null
@@ -26777,6 +26999,8 @@ export type Database = {
           deliveryDate?: string | null
           dropShipment?: boolean
           id?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           notes?: string | null
           receiptPromisedDate?: string | null
@@ -31465,6 +31689,8 @@ export type Database = {
         Row: {
           companyId: string
           id: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           locationId: string | null
           receiptRequestedDate: string | null
           shippingCost: number | null
@@ -31476,6 +31702,8 @@ export type Database = {
         Insert: {
           companyId: string
           id: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           receiptRequestedDate?: string | null
           shippingCost?: number | null
@@ -31487,6 +31715,8 @@ export type Database = {
         Update: {
           companyId?: string
           id?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           receiptRequestedDate?: string | null
           shippingCost?: number | null
@@ -33030,6 +33260,8 @@ export type Database = {
           createdBy: string
           customFields: Json
           id: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           locationId: string | null
           shippingCost: number
           shippingMethodId: string | null
@@ -33043,6 +33275,8 @@ export type Database = {
           createdBy: string
           customFields?: Json
           id: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           shippingCost?: number
           shippingMethodId?: string | null
@@ -33056,6 +33290,8 @@ export type Database = {
           createdBy?: string
           customFields?: Json
           id?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           shippingCost?: number
           shippingMethodId?: string | null
@@ -34036,6 +34272,8 @@ export type Database = {
           deliveryDate: string | null
           dropShipment: boolean
           id: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           locationId: string | null
           notes: string | null
           receiptPromisedDate: string | null
@@ -34058,6 +34296,8 @@ export type Database = {
           deliveryDate?: string | null
           dropShipment?: boolean
           id: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           notes?: string | null
           receiptPromisedDate?: string | null
@@ -34080,6 +34320,8 @@ export type Database = {
           deliveryDate?: string | null
           dropShipment?: boolean
           id?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           notes?: string | null
           receiptPromisedDate?: string | null
@@ -37619,6 +37861,7 @@ export type Database = {
           customFields: Json | null
           defaultCc: string[] | null
           embedding: unknown
+          eori: string | null
           fax: string | null
           id: string
           logo: string | null
@@ -37647,6 +37890,7 @@ export type Database = {
           customFields?: Json | null
           defaultCc?: string[] | null
           embedding?: unknown
+          eori?: string | null
           fax?: string | null
           id?: string
           logo?: string | null
@@ -37675,6 +37919,7 @@ export type Database = {
           customFields?: Json | null
           defaultCc?: string[] | null
           embedding?: unknown
+          eori?: string | null
           fax?: string | null
           id?: string
           logo?: string | null
@@ -39906,6 +40151,8 @@ export type Database = {
         Row: {
           companyId: string
           customFields: Json | null
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           shippingMethodId: string | null
           shippingSupplierContactId: string | null
           shippingSupplierId: string | null
@@ -39919,6 +40166,8 @@ export type Database = {
         Insert: {
           companyId: string
           customFields?: Json | null
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           shippingMethodId?: string | null
           shippingSupplierContactId?: string | null
           shippingSupplierId?: string | null
@@ -39932,6 +40181,8 @@ export type Database = {
         Update: {
           companyId?: string
           customFields?: Json | null
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           shippingMethodId?: string | null
           shippingSupplierContactId?: string | null
           shippingSupplierId?: string | null
@@ -41652,7 +41903,9 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          expirationDate: string | null
           id: string
+          itemId: string | null
           quantity: number
           readableId: string | null
           sourceDocument: string
@@ -41665,7 +41918,9 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          expirationDate?: string | null
           id?: string
+          itemId?: string | null
           quantity: number
           readableId?: string | null
           sourceDocument: string
@@ -41678,7 +41933,9 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          expirationDate?: string | null
           id?: string
+          itemId?: string | null
           quantity?: number
           readableId?: string | null
           sourceDocument?: string
@@ -41749,6 +42006,48 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "trackedEntity_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -45820,6 +46119,7 @@ export type Database = {
           customerTypeId: string | null
           customFields: Json | null
           defaultCc: string[] | null
+          eori: string | null
           externalId: Json | null
           fax: string | null
           id: string | null
@@ -51317,6 +51617,7 @@ export type Database = {
           supplierContactName: string | null
           supplierCountryCode: string | null
           supplierCountryName: string | null
+          supplierEori: string | null
           supplierName: string | null
           supplierPostalCode: string | null
           supplierStateProvince: string | null
@@ -51358,6 +51659,8 @@ export type Database = {
           exchangeRateUpdatedAt: string | null
           externalNotes: Json | null
           id: string | null
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
           jobId: string | null
@@ -52377,6 +52680,7 @@ export type Database = {
           customerCity: string | null
           customerCountryCode: string | null
           customerCountryName: string | null
+          customerEori: string | null
           customerName: string | null
           customerPostalCode: string | null
           customerStateProvince: string | null
@@ -54700,6 +55004,7 @@ export type Database = {
           customerCity: string | null
           customerCountryCode: string | null
           customerCountryName: string | null
+          customerEori: string | null
           customerName: string | null
           customerPostalCode: string | null
           customerStateProvince: string | null
@@ -55276,6 +55581,7 @@ export type Database = {
           customerCity: string | null
           customerCountryCode: string | null
           customerCountryName: string | null
+          customerEori: string | null
           customerName: string | null
           customerPostalCode: string | null
           customerStateProvince: string | null
@@ -55328,6 +55634,8 @@ export type Database = {
           externalId: Json | null
           externalNotes: Json | null
           id: string | null
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
           jobs: Json[] | null
@@ -57510,6 +57818,7 @@ export type Database = {
           customFields: Json | null
           defaultCc: string[] | null
           embedding: unknown
+          eori: string | null
           externalId: Json | null
           fax: string | null
           id: string | null
@@ -60176,6 +60485,10 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      resolve_shelf_life_start_for_receipt: {
+        Args: { p_item_id: string; p_receipt_id: string }
+        Returns: string
+      }
       search_company_index: {
         Args: {
           p_company_id: string
@@ -60193,6 +60506,21 @@ export type Database = {
           tags: string[]
           title: string
         }[]
+      }
+      set_shelf_life_for_operation: {
+        Args: {
+          p_event: Database["public"]["Enums"]["shelfLifeTriggerTiming"]
+          p_job_operation_id: string
+        }
+        Returns: undefined
+      }
+      set_shelf_life_on_operation_done: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      set_shelf_life_on_operation_started: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
@@ -60359,6 +60687,10 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      sync_propagate_item_readable_id_to_tracked_entity: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       sync_protect_system_required_actions: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
@@ -60456,6 +60788,7 @@ export type Database = {
       }
       update_receipt_line_serial_tracking: {
         Args: {
+          p_expiry_date?: string
           p_index: number
           p_receipt_id: string
           p_receipt_line_id: string
@@ -60625,6 +60958,18 @@ export type Database = {
         | "Passed"
         | "Failed"
         | "Partial"
+      incoterm:
+        | "EXW"
+        | "FCA"
+        | "FAS"
+        | "FOB"
+        | "CPT"
+        | "CIP"
+        | "CFR"
+        | "CIF"
+        | "DAP"
+        | "DPU"
+        | "DDP"
       inspectionLevel: "I" | "II" | "III" | "S1" | "S2" | "S3" | "S4"
       inspectionSeverity: "Normal" | "Tightened" | "Reduced"
       inspectionStatus: "Pass" | "Fail"
@@ -60936,6 +61281,8 @@ export type Database = {
       samplingPlanType: "All" | "First" | "Percentage" | "AQL"
       samplingStandard: "ANSI_Z1_4" | "ISO_2859_1"
       serviceType: "Internal" | "External"
+      shelfLifeMode: "Fixed Duration" | "Calculated" | "Set on Receipt"
+      shelfLifeTriggerTiming: "Before" | "After"
       shipmentSourceDocument:
         | "Sales Order"
         | "Sales Invoice"
@@ -61812,6 +62159,19 @@ export const Constants = {
         "Failed",
         "Partial",
       ],
+      incoterm: [
+        "EXW",
+        "FCA",
+        "FAS",
+        "FOB",
+        "CPT",
+        "CIP",
+        "CFR",
+        "CIF",
+        "DAP",
+        "DPU",
+        "DDP",
+      ],
       inspectionLevel: ["I", "II", "III", "S1", "S2", "S3", "S4"],
       inspectionSeverity: ["Normal", "Tightened", "Reduced"],
       inspectionStatus: ["Pass", "Fail"],
@@ -62154,6 +62514,8 @@ export const Constants = {
       samplingPlanType: ["All", "First", "Percentage", "AQL"],
       samplingStandard: ["ANSI_Z1_4", "ISO_2859_1"],
       serviceType: ["Internal", "External"],
+      shelfLifeMode: ["Fixed Duration", "Calculated", "Set on Receipt"],
+      shelfLifeTriggerTiming: ["Before", "After"],
       shipmentSourceDocument: [
         "Sales Order",
         "Sales Invoice",
