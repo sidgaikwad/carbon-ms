@@ -28,8 +28,8 @@ export async function action({ request }: ActionFunctionArgs) {
     .select("id, status")
     .in("id", ids as string[]);
 
-  const dateFields = ["dateIssued", "dateDue", "datePaid"];
-  if (!dateFields.includes(field)) {
+  const editableFields = ["dateIssued", "dateDue", "datePaid"];
+  if (!editableFields.includes(field)) {
     const lockedError = requireUnlockedBulk({
       statuses: (data ?? []).map((d) => d.status),
       checkFn: isPurchaseInvoiceLocked,

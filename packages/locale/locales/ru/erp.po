@@ -1701,10 +1701,10 @@ msgstr "Подписываясь, вы соглашаетесь с <0>Услов
 #: apps/erp/app/modules/items/ui/Tools/ToolForm.tsx:333
 #: apps/erp/app/routes/x+/part+/$itemId.details.tsx:334
 #: apps/erp/app/routes/x+/part+/$itemId.make.$makeMethodId.tsx:204
-#: apps/erp/app/routes/x+/quote+/$quoteId.$lineId.details.tsx:439
+#: apps/erp/app/routes/x+/quote+/$quoteId.$lineId.details.tsx:436
 #: apps/erp/app/routes/x+/quote+/$quoteId.$lineId.make.$methodId.tsx:137
-#: apps/erp/app/routes/x+/sales-order+/$orderId.$lineId.details.tsx:279
-#: apps/erp/app/routes/x+/sales-rfq+/$rfqId.$lineId.details.tsx:175
+#: apps/erp/app/routes/x+/sales-order+/$orderId.$lineId.details.tsx:278
+#: apps/erp/app/routes/x+/sales-rfq+/$rfqId.$lineId.details.tsx:174
 #: apps/erp/app/routes/x+/tool+/$itemId.details.tsx:269
 #: apps/erp/app/routes/x+/tool+/$itemId.make.$makeMethodId.tsx:161
 msgid "CAD Model"
@@ -8930,16 +8930,16 @@ msgstr "Примечание"
 #: apps/erp/app/modules/sales/ui/Pricing/PriceOverrideForm.tsx:219
 #: apps/erp/app/routes/share+/quote.$id.tsx:1183
 #: apps/erp/app/routes/x+/person+/$personId.notes.tsx:46
-#: apps/erp/app/routes/x+/purchase-invoice+/$invoiceId.$lineId.details.tsx:185
-#: apps/erp/app/routes/x+/purchase-invoice+/$invoiceId.details.tsx:190
-#: apps/erp/app/routes/x+/quote+/$quoteId.$lineId.details.tsx:340
-#: apps/erp/app/routes/x+/quote+/$quoteId.details.tsx:184
-#: apps/erp/app/routes/x+/sales-invoice+/$invoiceId.$lineId.details.tsx:179
-#: apps/erp/app/routes/x+/sales-invoice+/$invoiceId.details.tsx:181
+#: apps/erp/app/routes/x+/purchase-invoice+/$invoiceId.$lineId.details.tsx:177
+#: apps/erp/app/routes/x+/purchase-invoice+/$invoiceId.details.tsx:188
+#: apps/erp/app/routes/x+/quote+/$quoteId.$lineId.details.tsx:338
+#: apps/erp/app/routes/x+/quote+/$quoteId.details.tsx:182
+#: apps/erp/app/routes/x+/sales-invoice+/$invoiceId.$lineId.details.tsx:173
+#: apps/erp/app/routes/x+/sales-invoice+/$invoiceId.details.tsx:179
 #: apps/erp/app/routes/x+/sales-order+/$orderId.$lineId.details.tsx:208
-#: apps/erp/app/routes/x+/sales-order+/$orderId.details.tsx:209
+#: apps/erp/app/routes/x+/sales-order+/$orderId.details.tsx:207
 #: apps/erp/app/routes/x+/sales-rfq+/$rfqId.$lineId.details.tsx:149
-#: apps/erp/app/routes/x+/sales-rfq+/$rfqId.details.tsx:130
+#: apps/erp/app/routes/x+/sales-rfq+/$rfqId.details.tsx:128
 msgid "Notes"
 msgstr "Примечания"
 
