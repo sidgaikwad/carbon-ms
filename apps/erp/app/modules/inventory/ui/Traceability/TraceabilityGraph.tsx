@@ -72,7 +72,6 @@ type Props = {
   activities: Activity[];
   inputs: ActivityInput[];
   outputs: ActivityOutput[];
-  stepRecords?: import("./utils").StepRecord[];
   containments?: import("./utils").IssueContainment[];
   rootId: string;
   rootType: "entity" | "activity" | "job";
@@ -89,7 +88,6 @@ function TraceabilityGraphInner({
   activities,
   inputs,
   outputs,
-  stepRecords,
   containments,
   rootId,
   rootType,
@@ -108,10 +106,9 @@ function TraceabilityGraphInner({
       activities,
       inputs,
       outputs,
-      stepRecords,
       containments
     }),
-    [entities, activities, inputs, outputs, stepRecords, containments]
+    [entities, activities, inputs, outputs, containments]
   );
 
   const expansions = useTraceabilityStore((s) => s.expansions);

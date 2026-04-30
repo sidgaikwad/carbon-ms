@@ -2,12 +2,13 @@ import {
   Badge,
   Button,
   cn,
+  Skeleton,
   Tooltip,
   TooltipContent,
   TooltipTrigger
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   LuChevronLeft,
   LuChevronRight,
@@ -15,7 +16,7 @@ import {
   LuExternalLink,
   LuLink
 } from "react-icons/lu";
-import { Link } from "react-router";
+import { Link, useFetcher } from "react-router";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
 import { capitalize, copyToClipboard } from "~/utils/string";
 import { AttributeList, hasRenderedAttributes } from "./attributeRenderers";
@@ -27,6 +28,7 @@ import {
   activityHeadline,
   entityHeadline,
   type LineagePayload,
+  type StepRecord,
   sourceLinkHref
 } from "./utils";
 
@@ -112,14 +114,28 @@ export function TraceabilitySidebar({
     return { producedBy, consumedBy, inputs, outputs };
   }, [payload, entity, activity]);
 
+  const stepRecordsFetcher = useFetcher<{ stepRecords: StepRecord[] }>();
+  const lastLoadedActivityIdRef = useRef<string | null>(null);
+  const stepRecordsLoad = stepRecordsFetcher.load;
+  const activityId = activity?.id ?? null;
+  useEffect(() => {
+    if (!activityId) return;
+    if (lastLoadedActivityIdRef.current === activityId) return;
+    lastLoadedActivityIdRef.current = activityId;
+    stepRecordsLoad(
+      `/api/traceability/sidebar?activityId=${encodeURIComponent(activityId)}`
+    );
+  }, [activityId, stepRecordsLoad]);
+
   const stepRecordsForActivity = useMemo(() => {
-    if (!activity || !payload?.stepRecords?.length) return [];
+    const list = stepRecordsFetcher.data?.stepRecords ?? [];
+    if (!activity || list.length === 0) return [];
     const opId = (activity.attributes as Record<string, any> | null)?.[
       "Job Operation"
     ];
     if (!opId) return [];
-    return payload.stepRecords.filter((r) => r.operationId === opId);
-  }, [activity, payload?.stepRecords]);
+    return list.filter((r) => r.operationId === opId);
+  }, [activity, stepRecordsFetcher.data]);
 
   const containmentsForEntity = useMemo(() => {
     if (!entity || !payload?.containments?.length) return [];
@@ -332,17 +348,23 @@ export function TraceabilitySidebar({
           </Section>
         )}
 
-        {stepRecordsForActivity.length > 0 && (
-          <Section title="Step records" count={stepRecordsForActivity.length}>
-            <StepRecordsList
-              records={stepRecordsForActivity}
-              jobId={
-                (activity?.attributes as Record<string, any> | null)?.Job ??
-                null
-              }
-            />
-          </Section>
-        )}
+        {activity &&
+          (stepRecordsFetcher.state === "loading" &&
+          stepRecordsFetcher.data === undefined ? (
+            <Section title="Step records">
+              <StepRecordsSkeleton />
+            </Section>
+          ) : stepRecordsForActivity.length > 0 ? (
+            <Section title="Step records" count={stepRecordsForActivity.length}>
+              <StepRecordsList
+                records={stepRecordsForActivity}
+                jobId={
+                  (activity?.attributes as Record<string, any> | null)?.Job ??
+                  null
+                }
+              />
+            </Section>
+          ) : null)}
 
         {hasRenderedAttributes(selectedNodeAttributes) && (
           <Section title="Attributes">
@@ -511,5 +533,22 @@ function RelatedEntityRow({
         </div>
       </button>
     </li>
+  );
+}
+
+function StepRecordsSkeleton() {
+  return (
+    <ul className="divide-y divide-border/30">
+      {[0, 1, 2].map((i) => (
+        <li key={i} className="px-2 py-1.5 flex items-center gap-2">
+          <Skeleton className="h-6 w-6 rounded-full shrink-0" />
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-2.5 w-20 opacity-70" />
+          </div>
+          <Skeleton className="h-3 w-10 shrink-0" />
+        </li>
+      ))}
+    </ul>
   );
 }

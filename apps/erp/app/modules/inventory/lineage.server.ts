@@ -136,41 +136,38 @@ async function runLineageBfs(
     if (frontier.length === 0) break;
     if (entities.size >= MAX_ENTITIES) break;
 
-    const descendantsResults: {
-      id: string;
+    type BatchRow = {
+      sourceEntityId: string;
       trackedActivityId: string;
-      quantity: number;
-    }[][] = [];
-    const ancestorsResults: {
       id: string;
-      trackedActivityId: string;
       quantity: number;
-    }[][] = [];
+    };
 
     const calls: Promise<void>[] = [];
-    for (const id of frontier) {
-      if (direction === "down" || direction === "both") {
-        calls.push(
-          (async () => {
-            const res = await client.rpc(
-              "get_direct_descendants_of_tracked_entity_strict",
-              { p_tracked_entity_id: id }
-            );
-            descendantsResults.push((res.data ?? []) as any);
-          })()
-        );
-      }
-      if (direction === "up" || direction === "both") {
-        calls.push(
-          (async () => {
-            const res = await client.rpc(
-              "get_direct_ancestors_of_tracked_entity_strict",
-              { p_tracked_entity_id: id }
-            );
-            ancestorsResults.push((res.data ?? []) as any);
-          })()
-        );
-      }
+    let descendantsBatch: BatchRow[] = [];
+    let ancestorsBatch: BatchRow[] = [];
+
+    if (direction === "down" || direction === "both") {
+      calls.push(
+        (async () => {
+          const res = await client.rpc(
+            "get_direct_descendants_of_tracked_entities_strict",
+            { p_tracked_entity_ids: frontier }
+          );
+          descendantsBatch = (res.data ?? []) as BatchRow[];
+        })()
+      );
+    }
+    if (direction === "up" || direction === "both") {
+      calls.push(
+        (async () => {
+          const res = await client.rpc(
+            "get_direct_ancestors_of_tracked_entities_strict",
+            { p_tracked_entity_ids: frontier }
+          );
+          ancestorsBatch = (res.data ?? []) as BatchRow[];
+        })()
+      );
     }
 
     await Promise.all(calls);
@@ -179,60 +176,57 @@ async function runLineageBfs(
     const newEntityIds = new Set<string>();
     const activityIds = new Set<string>();
 
-    for (let i = 0; i < frontier.length; i++) {
-      const sourceId = frontier[i];
-      const desc = descendantsResults[i] ?? [];
-      for (const row of desc) {
-        if (!row?.id) continue;
-        activityIds.add(row.trackedActivityId);
-        const outputKey = `${row.trackedActivityId}:${sourceId}`;
-        if (!outputs.has(outputKey)) {
-          outputs.set(outputKey, {
-            trackedActivityId: row.trackedActivityId,
-            trackedEntityId: sourceId,
-            quantity: row.quantity
-          });
-        }
-        if (!visited.has(row.id)) {
-          visited.add(row.id);
-          newEntityIds.add(row.id);
-          nextFrontier.add(row.id);
-        }
-        const inputKey = `${row.trackedActivityId}:${row.id}`;
-        if (!inputs.has(inputKey)) {
-          inputs.set(inputKey, {
-            trackedActivityId: row.trackedActivityId,
-            trackedEntityId: row.id,
-            quantity: row.quantity
-          });
-        }
+    for (let i = 0; i < descendantsBatch.length; i++) {
+      const row = descendantsBatch[i];
+      if (!row?.id) continue;
+      activityIds.add(row.trackedActivityId);
+      const outputKey = `${row.trackedActivityId}:${row.sourceEntityId}`;
+      if (!outputs.has(outputKey)) {
+        outputs.set(outputKey, {
+          trackedActivityId: row.trackedActivityId,
+          trackedEntityId: row.sourceEntityId,
+          quantity: row.quantity
+        });
       }
+      if (!visited.has(row.id)) {
+        visited.add(row.id);
+        newEntityIds.add(row.id);
+        nextFrontier.add(row.id);
+      }
+      const inputKey = `${row.trackedActivityId}:${row.id}`;
+      if (!inputs.has(inputKey)) {
+        inputs.set(inputKey, {
+          trackedActivityId: row.trackedActivityId,
+          trackedEntityId: row.id,
+          quantity: row.quantity
+        });
+      }
+    }
 
-      const anc = ancestorsResults[i] ?? [];
-      for (const row of anc) {
-        if (!row?.id) continue;
-        activityIds.add(row.trackedActivityId);
-        const inputKey = `${row.trackedActivityId}:${sourceId}`;
-        if (!inputs.has(inputKey)) {
-          inputs.set(inputKey, {
-            trackedActivityId: row.trackedActivityId,
-            trackedEntityId: sourceId,
-            quantity: row.quantity
-          });
-        }
-        if (!visited.has(row.id)) {
-          visited.add(row.id);
-          newEntityIds.add(row.id);
-          nextFrontier.add(row.id);
-        }
-        const outputKey = `${row.trackedActivityId}:${row.id}`;
-        if (!outputs.has(outputKey)) {
-          outputs.set(outputKey, {
-            trackedActivityId: row.trackedActivityId,
-            trackedEntityId: row.id,
-            quantity: row.quantity
-          });
-        }
+    for (let i = 0; i < ancestorsBatch.length; i++) {
+      const row = ancestorsBatch[i];
+      if (!row?.id) continue;
+      activityIds.add(row.trackedActivityId);
+      const inputKey = `${row.trackedActivityId}:${row.sourceEntityId}`;
+      if (!inputs.has(inputKey)) {
+        inputs.set(inputKey, {
+          trackedActivityId: row.trackedActivityId,
+          trackedEntityId: row.sourceEntityId,
+          quantity: row.quantity
+        });
+      }
+      if (!visited.has(row.id)) {
+        visited.add(row.id);
+        newEntityIds.add(row.id);
+        nextFrontier.add(row.id);
+      }
+      const outputKey = `${row.trackedActivityId}:${row.id}`;
+      if (!outputs.has(outputKey)) {
+        outputs.set(outputKey, {
+          trackedActivityId: row.trackedActivityId,
+          trackedEntityId: row.id,
+          quantity: row.quantity
+        });
       }
     }
 
@@ -320,38 +314,36 @@ export async function fetchContainmentsForEntities(
 ): Promise<IssueContainment[]> {
   if (entityIds.length === 0) return [];
 
-  const linkRes = await client
+  // Single round-trip: PostgREST embed pulls the linked issue inline and
+  // filters server-side to only Contained/Uncontained statuses.
+  const res = await client
     .from("nonConformanceTrackedEntity")
-    .select("nonConformanceId, trackedEntityId")
-    .in("trackedEntityId", entityIds);
-  const links = linkRes.data ?? [];
-  if (links.length === 0) return [];
-
-  const issueIds = Array.from(new Set(links.map((l) => l.nonConformanceId)));
-
-  const issuesRes = await client
-    .from("issues")
-    .select("id, nonConformanceId, status, priority, containmentStatus")
-    .in("id", issueIds);
-  type IssueRow = NonNullable<typeof issuesRes.data>[number];
-  const issuesById = new Map<string, IssueRow>();
-  for (const row of issuesRes.data ?? []) {
-    if (row.id) issuesById.set(row.id, row);
-  }
+    .select(
+      `trackedEntityId,
+       nonConformanceId,
+       issue:issues!inner(id, status, priority, containmentStatus)`
+    )
+    .in("trackedEntityId", entityIds)
+    .in("issue.containmentStatus", ["Contained", "Uncontained"]);
 
   const containments: IssueContainment[] = [];
-  for (const link of links) {
-    const issue = issuesById.get(link.nonConformanceId);
+  for (const row of res.data ?? []) {
+    const issue = row.issue as {
+      id: string | null;
+      status: string | null;
+      priority: string | null;
+      containmentStatus: string | null;
+    } | null;
     if (!issue) continue;
     const status = issue.containmentStatus;
     if (status !== "Contained" && status !== "Uncontained") continue;
     containments.push({
-      id: issue.id ?? link.nonConformanceId,
-      readableId: issue.nonConformanceId,
+      id: issue.id ?? row.nonConformanceId,
+      readableId: row.nonConformanceId,
       containmentStatus: status as IssueContainmentStatus,
       status: issue.status ?? "",
       priority: issue.priority ?? null,
-      trackedEntityId: link.trackedEntityId
+      trackedEntityId: row.trackedEntityId
     });
   }
   return containments;
@@ -395,17 +387,16 @@ export async function fetchJobScopedLineage(
     );
   }
 
-  const [stepRecords, containments] = await Promise.all([
-    fetchJobStepRecords(client, jobId),
-    fetchContainmentsForEntities(client, Array.from(state.entities.keys()))
-  ]);
+  const containments = await fetchContainmentsForEntities(
+    client,
+    Array.from(state.entities.keys())
+  );
 
   return {
     entities: Array.from(state.entities.values()),
     inputs: Array.from(state.inputs.values()),
     outputs: Array.from(state.outputs.values()),
     activities: Array.from(state.activities.values()),
-    stepRecords,
     containments
   };
 }
