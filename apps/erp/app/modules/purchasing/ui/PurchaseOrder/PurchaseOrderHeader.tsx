@@ -72,7 +72,7 @@ const PurchaseOrderHeader = () => {
     canReopen: boolean;
     canDelete: boolean;
     defaultCc: string[];
-    supplier: { supplierStatus: string | null } | null;
+    supplier: { status: string | null } | null;
   }>(path.to.purchaseOrder(orderId));
 
   const [suppliers] = useSuppliers();

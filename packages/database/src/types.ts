@@ -11649,12 +11649,12 @@ export type Database = {
       }
       itemShelfLife: {
         Row: {
+          calculateFromBom: boolean
           companyId: string
           createdAt: string
           createdBy: string
           customFields: Json | null
           days: number | null
-          inheritEarliestInputExpiry: boolean
           itemId: string
           mode: Database["public"]["Enums"]["shelfLifeMode"]
           triggerProcessId: string | null
@@ -11663,12 +11663,12 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          calculateFromBom?: boolean
           companyId: string
           createdAt?: string
           createdBy: string
           customFields?: Json | null
           days?: number | null
-          inheritEarliestInputExpiry?: boolean
           itemId: string
           mode: Database["public"]["Enums"]["shelfLifeMode"]
           triggerProcessId?: string | null
@@ -11677,12 +11677,12 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          calculateFromBom?: boolean
           companyId?: string
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
           days?: number | null
-          inheritEarliestInputExpiry?: boolean
           itemId?: string
           mode?: Database["public"]["Enums"]["shelfLifeMode"]
           triggerProcessId?: string | null
@@ -35436,6 +35436,48 @@ export type Database = {
           },
         ]
       }
+      searchIndex_YMRLEKuAtGbyVG5HRUD7k9: {
+        Row: {
+          createdAt: string
+          description: string | null
+          entityId: string
+          entityType: string
+          id: number
+          link: string
+          metadata: Json | null
+          searchVector: unknown
+          tags: string[] | null
+          title: string
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string
+          description?: string | null
+          entityId: string
+          entityType: string
+          id?: number
+          link: string
+          metadata?: Json | null
+          searchVector?: unknown
+          tags?: string[] | null
+          title: string
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string
+          description?: string | null
+          entityId?: string
+          entityType?: string
+          id?: number
+          link?: string
+          metadata?: Json | null
+          searchVector?: unknown
+          tags?: string[] | null
+          title?: string
+          updatedAt?: string | null
+        }
+        Relationships: []
+      }
       searchIndexRegistry: {
         Row: {
           companyId: string
@@ -55029,14 +55071,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -59209,6 +59251,22 @@ export type Database = {
         Args: { permission: string }
         Returns: string[]
       }
+      get_direct_ancestors_of_tracked_entities_strict: {
+        Args: { p_tracked_entity_ids: string[] }
+        Returns: {
+          activityAttributes: Json
+          attributes: Json
+          id: string
+          quantity: number
+          readableId: string
+          sourceDocument: string
+          sourceDocumentId: string
+          sourceDocumentReadableId: string
+          sourceEntityId: string
+          status: Database["public"]["Enums"]["trackedEntityStatus"]
+          trackedActivityId: string
+        }[]
+      }
       get_direct_ancestors_of_tracked_entity: {
         Args: { p_tracked_entity_id: string }
         Returns: {
@@ -59235,6 +59293,22 @@ export type Database = {
           sourceDocument: string
           sourceDocumentId: string
           sourceDocumentReadableId: string
+          status: Database["public"]["Enums"]["trackedEntityStatus"]
+          trackedActivityId: string
+        }[]
+      }
+      get_direct_descendants_of_tracked_entities_strict: {
+        Args: { p_tracked_entity_ids: string[] }
+        Returns: {
+          activityAttributes: Json
+          attributes: Json
+          id: string
+          quantity: number
+          readableId: string
+          sourceDocument: string
+          sourceDocumentId: string
+          sourceDocumentReadableId: string
+          sourceEntityId: string
           status: Database["public"]["Enums"]["trackedEntityStatus"]
           trackedActivityId: string
         }[]

@@ -11649,12 +11649,12 @@ export type Database = {
       }
       itemShelfLife: {
         Row: {
+          calculateFromBom: boolean
           companyId: string
           createdAt: string
           createdBy: string
           customFields: Json | null
           days: number | null
-          inheritEarliestInputExpiry: boolean
           itemId: string
           mode: Database["public"]["Enums"]["shelfLifeMode"]
           triggerProcessId: string | null
@@ -11663,12 +11663,12 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          calculateFromBom?: boolean
           companyId: string
           createdAt?: string
           createdBy: string
           customFields?: Json | null
           days?: number | null
-          inheritEarliestInputExpiry?: boolean
           itemId: string
           mode: Database["public"]["Enums"]["shelfLifeMode"]
           triggerProcessId?: string | null
@@ -11677,12 +11677,12 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          calculateFromBom?: boolean
           companyId?: string
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
           days?: number | null
-          inheritEarliestInputExpiry?: boolean
           itemId?: string
           mode?: Database["public"]["Enums"]["shelfLifeMode"]
           triggerProcessId?: string | null

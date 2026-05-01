@@ -27346,7 +27346,7 @@ export default {
             $ref: "#/parameters/rowFilter.itemShelfLife.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.itemShelfLife.inheritEarliestInputExpiry"
+            $ref: "#/parameters/rowFilter.itemShelfLife.calculateFromBom"
           },
           {
             $ref: "#/parameters/select"
@@ -27441,7 +27441,7 @@ export default {
             $ref: "#/parameters/rowFilter.itemShelfLife.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.itemShelfLife.inheritEarliestInputExpiry"
+            $ref: "#/parameters/rowFilter.itemShelfLife.calculateFromBom"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -27490,7 +27490,7 @@ export default {
             $ref: "#/parameters/rowFilter.itemShelfLife.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.itemShelfLife.inheritEarliestInputExpiry"
+            $ref: "#/parameters/rowFilter.itemShelfLife.calculateFromBom"
           },
           {
             $ref: "#/parameters/body.itemShelfLife"
@@ -88306,7 +88306,7 @@ export default {
         "companyId",
         "createdBy",
         "createdAt",
-        "inheritEarliestInputExpiry"
+        "calculateFromBom"
       ],
       properties: {
         itemId: {
@@ -88366,7 +88366,7 @@ export default {
         customFields: {
           format: "jsonb"
         },
-        inheritEarliestInputExpiry: {
+        calculateFromBom: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -122142,8 +122142,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.itemShelfLife.inheritEarliestInputExpiry": {
-      name: "inheritEarliestInputExpiry",
+    "rowFilter.itemShelfLife.calculateFromBom": {
+      name: "calculateFromBom",
       required: false,
       in: "query",
       type: "string"
