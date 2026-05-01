@@ -1,6 +1,6 @@
 import { CarbonEdition } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
+import { TooltipProvider, VStack } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import { Edition } from "@carbon/utils";
 import type {
@@ -63,11 +63,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function OnboardingLayout() {
   return (
-    <VStack
-      spacing={4}
-      className="h-screen w-screen justify-center items-center p-4"
-    >
-      <Outlet />
-    </VStack>
+    <TooltipProvider>
+      <VStack
+        spacing={4}
+        className="h-screen w-screen justify-center items-center p-4"
+      >
+        <Outlet />
+      </VStack>
+    </TooltipProvider>
   );
 }

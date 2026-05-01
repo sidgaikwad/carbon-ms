@@ -59209,6 +59209,22 @@ export type Database = {
         Args: { permission: string }
         Returns: string[]
       }
+      get_direct_ancestors_of_tracked_entities_strict: {
+        Args: { p_tracked_entity_ids: string[] }
+        Returns: {
+          activityAttributes: Json
+          attributes: Json
+          id: string
+          quantity: number
+          readableId: string
+          sourceDocument: string
+          sourceDocumentId: string
+          sourceDocumentReadableId: string
+          sourceEntityId: string
+          status: Database["public"]["Enums"]["trackedEntityStatus"]
+          trackedActivityId: string
+        }[]
+      }
       get_direct_ancestors_of_tracked_entity: {
         Args: { p_tracked_entity_id: string }
         Returns: {
@@ -59235,6 +59251,22 @@ export type Database = {
           sourceDocument: string
           sourceDocumentId: string
           sourceDocumentReadableId: string
+          status: Database["public"]["Enums"]["trackedEntityStatus"]
+          trackedActivityId: string
+        }[]
+      }
+      get_direct_descendants_of_tracked_entities_strict: {
+        Args: { p_tracked_entity_ids: string[] }
+        Returns: {
+          activityAttributes: Json
+          attributes: Json
+          id: string
+          quantity: number
+          readableId: string
+          sourceDocument: string
+          sourceDocumentId: string
+          sourceDocumentReadableId: string
+          sourceEntityId: string
           status: Database["public"]["Enums"]["trackedEntityStatus"]
           trackedActivityId: string
         }[]

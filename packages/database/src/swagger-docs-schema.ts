@@ -67554,6 +67554,44 @@ export default {
         tags: ["(rpc) sync_create_location_related_records"]
       }
     },
+    "/rpc/get_direct_ancestors_of_tracked_entities_strict": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_tracked_entity_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["p_tracked_entity_ids"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_direct_ancestors_of_tracked_entities_strict"]
+      }
+    },
     "/rpc/get_supplier_interaction_with_related_records": {
       post: {
         parameters: [
@@ -69491,6 +69529,44 @@ export default {
           }
         },
         tags: ["(rpc) get_quote_methods_by_method_id"]
+      }
+    },
+    "/rpc/get_direct_descendants_of_tracked_entities_strict": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_tracked_entity_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["p_tracked_entity_ids"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_direct_descendants_of_tracked_entities_strict"]
       }
     },
     "/rpc/get_quote_methods": {
