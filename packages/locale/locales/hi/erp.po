@@ -482,7 +482,7 @@ msgstr "समूह जोड़ें"
 msgid "Add Item"
 msgstr "आइटम जोड़ें"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:360
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:402
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferLines.tsx:352
 #: apps/erp/app/routes/x+/picking-list+/$id.line.new.tsx:171
 msgid "Add Line"
@@ -4027,7 +4027,7 @@ msgstr "आपूर्तिकर्ता उद्धरण हटाएं"
 msgid "Delete Supplier Type"
 msgstr "आपूर्तिकर्ता प्रकार हटाएं"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:334
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:376
 msgid "Delete this line?"
 msgstr ""
 
@@ -6330,7 +6330,7 @@ msgstr "इस RFQ को उद्धरण में परिवर्ति�
 msgid "In order to send this RFQ to suppliers, you must first add suppliers to the RFQ."
 msgstr "इस RFQ को आपूर्तिकर्ताओं को भेजने के लिए, आपको पहले RFQ में आपूर्तिकर्ता जोड़ने होंगे।"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:99
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:105
 msgid "in other PLs"
 msgstr ""
 
@@ -7258,7 +7258,7 @@ msgstr "लाइन स्थिति"
 msgid "Linear Team"
 msgstr "Linear Team"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:346
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:388
 msgid "Lines"
 msgstr ""
 
@@ -9354,7 +9354,7 @@ msgstr ""
 msgid "Outstanding quantities"
 msgstr ""
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:245
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:276
 msgid "Outstanding:"
 msgstr ""
 
@@ -9374,7 +9374,7 @@ msgstr "ओवरहेड दर"
 msgid "Overhead Rate (Hourly)"
 msgstr "ओवरहेड दर (प्रति घंटा)"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:252
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:283
 msgid "Overpick:"
 msgstr ""
 
@@ -9683,11 +9683,11 @@ msgstr "पिक लिस्ट"
 msgid "Pick Shelf"
 msgstr ""
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:349
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:391
 msgid "picked"
 msgstr ""
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:217
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:248
 #: apps/erp/app/routes/x+/picking-list+/$id.pdf.tsx:132
 msgid "Picked"
 msgstr ""
@@ -10620,7 +10620,7 @@ msgstr "उद्धरण"
 msgid "Rate Limit"
 msgstr "दर सीमा"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:137
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:143
 msgid "Re-scan"
 msgstr ""
 
@@ -11041,7 +11041,7 @@ msgid "Require approval for quality documents in your workflow"
 msgstr "आपके वर्कफ़्लो में गुणवत्ता दस्तावेज़ों के लिए अनुमोदन की आवश्यकता है"
 
 #: apps/erp/app/modules/api/ui/TableDocs.tsx:430
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:109
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:115
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferWizard.tsx:422
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferWizard.tsx:854
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:226
@@ -11660,7 +11660,7 @@ msgstr "विधि सहेजें"
 msgid "Save View"
 msgstr "दृश्य सहेजें"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:139
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:145
 #: apps/erp/app/modules/quality/ui/InboundInspections/ScanInspectionSample.tsx:125
 #: apps/erp/app/modules/resources/ui/Maintenance/MaintenanceAddPartModal.tsx:378
 #: apps/erp/app/modules/resources/ui/Maintenance/MaintenanceAddPartModal.tsx:498
@@ -13583,7 +13583,7 @@ msgstr "यह जॉब इन्वेंटरी में प्राप�
 msgid "This job will no longer be available on the shop floor."
 msgstr "यह नौकरी अब शॉप फ्लोर पर उपलब्ध नहीं होगी।"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:369
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:411
 msgid "This picking list has no lines yet."
 msgstr ""
 

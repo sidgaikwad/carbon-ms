@@ -31,8 +31,13 @@ import { path } from "~/utils/path";
 interface PickingListLineRowProps {
   line: PickingListLine;
   isEditable: boolean;
+  canApprove: boolean;
   allocatedElsewhere: number;
-  onPick: (line: PickingListLine, qty: number) => void;
+  onPick: (
+    line: PickingListLine,
+    qty: number,
+    acknowledgeOverpick?: boolean
+  ) => void;
   onUnpick: (line: PickingListLine) => void;
   onScan: (line: PickingListLine) => void;
   onEdit: (line: PickingListLine) => void;
@@ -42,6 +47,7 @@ interface PickingListLineRowProps {
 function PickingListLineRow({
   line,
   isEditable,
+  canApprove,
   allocatedElsewhere,
   onPick,
   onUnpick,
@@ -162,9 +168,34 @@ function PickingListLineRow({
                       const tolerance =
                         (line as any).overpickTolerancePercent ?? 2;
                       const warnAt = required * (1 + tolerance / 100);
-                      if (required > 0 && n > warnAt && n <= required * 2) {
+                      const hardBlockAt = required * 2;
+                      const uom = line.unitOfMeasureCode ?? "";
+
+                      // Tier 1: above hard block (2×) — approver override
+                      // path or full block.
+                      if (required > 0 && n > hardBlockAt) {
+                        if (!canApprove) {
+                          window.alert(
+                            `Cannot pick ${n} ${uom}: exceeds 2× the required quantity (${hardBlockAt}). Approver override required.`
+                          );
+                          setQty(String(line.pickedQuantity ?? 0));
+                          return;
+                        }
                         const ok = window.confirm(
-                          `Picking ${n} ${line.unitOfMeasureCode ?? ""} exceeds the required ${required} by more than ${tolerance}%. Continue?`
+                          `Approver override: pick ${n} ${uom}? This is more than 2× the required ${required} ${uom}.`
+                        );
+                        if (!ok) {
+                          setQty(String(line.pickedQuantity ?? 0));
+                          return;
+                        }
+                        onPick(line, n, true);
+                        return;
+                      }
+
+                      // Tier 2: above soft tolerance but ≤ 2× — confirm.
+                      if (required > 0 && n > warnAt) {
+                        const ok = window.confirm(
+                          `Picking ${n} ${uom} exceeds the required ${required} by more than ${tolerance}%. Continue?`
                         );
                         if (!ok) {
                           setQty(String(line.pickedQuantity ?? 0));
@@ -306,11 +337,22 @@ const PickingListLines = () => {
     !["Confirmed"].includes(pl.status) &&
     permissions.can("update", "inventory");
 
+  const canApprove = permissions.can("approve", "inventory");
+
   const pickedCount = lines.filter((l) => (l.pickedQuantity ?? 0) > 0).length;
 
-  const onPick = (line: PickingListLine, qty: number) => {
+  const onPick = (
+    line: PickingListLine,
+    qty: number,
+    acknowledgeOverpick?: boolean
+  ) => {
     pickFetcher.submit(
-      { pickingListId: id, pickingListLineId: line.id!, pickedQuantity: qty },
+      {
+        pickingListId: id,
+        pickingListLineId: line.id!,
+        pickedQuantity: qty,
+        ...(acknowledgeOverpick ? { acknowledgeOverpick: "true" } : {})
+      },
       { method: "post", action: path.to.pickingListLineQuantity(id) }
     );
   };
@@ -375,6 +417,7 @@ const PickingListLines = () => {
               key={line.id}
               line={line}
               isEditable={isEditable}
+              canApprove={canApprove}
               allocatedElsewhere={allocationMap[line.itemId ?? ""] ?? 0}
               onPick={onPick}
               onUnpick={onUnpick}

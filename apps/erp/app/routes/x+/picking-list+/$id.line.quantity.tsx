@@ -16,6 +16,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const pickingListLineId = formData.get("pickingListLineId") as string;
   const pickedQuantity = parseFloat(formData.get("pickedQuantity") as string);
+  const acknowledgeOverpickInput =
+    formData.get("acknowledgeOverpick") === "true";
 
   if (!pickingListLineId || isNaN(pickedQuantity)) {
     return data(
@@ -24,12 +26,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Approver bypass: only honor acknowledgeOverpick if the caller has the
+  // inventory_approve permission. requirePermissions throws 403 if not.
+  if (acknowledgeOverpickInput) {
+    await requirePermissions(request, { approve: "inventory" });
+  }
+
   const { error: fnError } = await client.functions.invoke("pick", {
     body: JSON.stringify({
       type: "pickInventoryLine",
       pickingListId: id,
       pickingListLineId,
       pickedQuantity,
+      acknowledgeOverpick: acknowledgeOverpickInput,
       companyId,
       userId
     })

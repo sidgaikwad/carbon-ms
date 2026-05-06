@@ -32,6 +32,7 @@ const payloadValidator = z.discriminatedUnion("type", [
     pickingListId: z.string(),
     pickingListLineId: z.string(),
     pickedQuantity: z.number().min(0),
+    acknowledgeOverpick: z.boolean().optional(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -196,7 +197,7 @@ async function regeneratePickingList(client: any, payload: any) {
 }
 
 async function pickInventoryLine(client: any, payload: any) {
-  const { pickingListId, pickingListLineId, pickedQuantity, companyId, userId } = payload;
+  const { pickingListId, pickingListLineId, pickedQuantity, acknowledgeOverpick, companyId, userId } = payload;
 
   const { data: pl } = await client
     .from("pickingList")
@@ -209,7 +210,10 @@ async function pickInventoryLine(client: any, payload: any) {
     throw new Error("Picking list must be Released or In Progress to pick lines");
   }
 
-  // Over-pick guard: hard block at 2x estimated/adjusted qty
+  // Over-pick guard: hard block at 2× estimated/adjusted qty unless an
+  // approver-permission caller passed acknowledgeOverpick=true. The caller
+  // (action route) is responsible for enforcing inventory_approve before
+  // setting that flag — see $id.line.quantity.tsx.
   const { data: lineCheck } = await client
     .from("pickingListLine")
     .select("estimatedQuantity, adjustedQuantity")
@@ -219,9 +223,9 @@ async function pickInventoryLine(client: any, payload: any) {
 
   if (lineCheck) {
     const effectiveQty = (lineCheck.adjustedQuantity ?? lineCheck.estimatedQuantity) as number;
-    if (pickedQuantity > effectiveQty * 2) {
+    if (pickedQuantity > effectiveQty * 2 && !acknowledgeOverpick) {
       throw new Error(
-        `Cannot pick more than 2× the required quantity. Maximum allowed: ${effectiveQty * 2}`
+        `Cannot pick more than 2× the required quantity (${effectiveQty * 2}). Approver override required.`
       );
     }
   }
