@@ -56,6 +56,104 @@ export async function getCompanySettings(
     .single();
 }
 
+export async function getPickingListsForOperator(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { userId: string; locationId?: string }
+) {
+  let query = client
+    .from("pickingList")
+    .select(
+      `id, pickingListId, jobId, locationId, status, assignee, dueDate,
+       confirmedAt, createdAt,
+       job:jobId(jobId, itemId, item:itemId(name, readableId)),
+       location:locationId(name)`
+    )
+    .eq("companyId", companyId)
+    .in("status", ["Released", "In Progress"])
+    .or(`assignee.eq.${args.userId},assignee.is.null`)
+    .order("dueDate", { ascending: true, nullsFirst: false })
+    .order("createdAt", { ascending: false });
+
+  if (args.locationId) query = query.eq("locationId", args.locationId);
+  return query;
+}
+
+export async function getPickingListForOperator(
+  client: SupabaseClient<Database>,
+  pickingListId: string,
+  companyId: string
+) {
+  const { data: pl, error: plError } = await client
+    .from("pickingList")
+    .select(
+      `id, pickingListId, jobId, locationId, status, assignee, dueDate,
+       confirmedAt, shortageReason,
+       job:jobId(id, jobId, itemId, item:itemId(name, readableId)),
+       location:locationId(name)`
+    )
+    .eq("id", pickingListId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (plError || !pl) return { data: null, error: plError };
+
+  const { data: lines, error: linesError } = await client
+    .from("pickingListLine")
+    .select("*")
+    .eq("pickingListId", pickingListId)
+    .order("createdAt", { ascending: true });
+
+  if (linesError) return { data: null, error: linesError };
+
+  const itemIds = [
+    ...new Set((lines ?? []).map((l) => l.itemId).filter(Boolean))
+  ];
+  const storageUnitIds = [
+    ...new Set(
+      (lines ?? [])
+        .flatMap((l) => [l.storageUnitId, l.destinationStorageUnitId])
+        .filter(Boolean)
+    )
+  ];
+
+  const [itemsRes, storageUnitsRes] = await Promise.all([
+    itemIds.length
+      ? client
+          .from("item")
+          .select("id, name, readableId, unitOfMeasureCode, itemTrackingType")
+          .in("id", itemIds)
+      : Promise.resolve({ data: [], error: null } as const),
+    storageUnitIds.length
+      ? client.from("storageUnit").select("id, name").in("id", storageUnitIds)
+      : Promise.resolve({ data: [], error: null } as const)
+  ]);
+
+  if (itemsRes.error || storageUnitsRes.error)
+    return {
+      data: null,
+      error: itemsRes.error ?? storageUnitsRes.error
+    };
+
+  const itemById = new Map((itemsRes.data ?? []).map((row) => [row.id, row]));
+  const suById = new Map(
+    (storageUnitsRes.data ?? []).map((row) => [row.id, row])
+  );
+
+  const merged = (lines ?? []).map((line) => ({
+    ...line,
+    item: line.itemId ? (itemById.get(line.itemId) ?? null) : null,
+    storageUnit: line.storageUnitId
+      ? (suById.get(line.storageUnitId) ?? null)
+      : null,
+    destinationStorageUnit: line.destinationStorageUnitId
+      ? (suById.get(line.destinationStorageUnitId) ?? null)
+      : null
+  }));
+
+  return { data: { pickingList: pl, lines: merged }, error: null };
+}
+
 export async function getSerialNumbersForItem(
   client: SupabaseClient<Database>,
   args: {

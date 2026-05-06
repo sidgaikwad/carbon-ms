@@ -125,6 +125,14 @@ export const path = {
     onboarding: `${ERP_URL}/onboarding`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
     operations: `${x}/operations?saved=1`,
+    pickingLists: `${x}/picking-lists`,
+    pickingList: (id: string) => generatePath(`${x}/picking-list/${id}`),
+    pickingListScan: (id: string, lineId: string) =>
+      generatePath(`${x}/picking-list/${id}/scan/${lineId}`),
+    pickingListConfirm: (id: string) =>
+      generatePath(`${x}/picking-list/${id}/confirm`),
+    pickingListPick: (id: string) =>
+      generatePath(`${x}/picking-list/${id}/pick`),
     productionEvent: `${x}/event`,
     recent: `${x}/recent`,
     record: `${x}/record`,

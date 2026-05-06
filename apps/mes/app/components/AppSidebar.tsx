@@ -202,6 +202,11 @@ export function OperationsNav({
       to: path.to.active
     },
     {
+      title: t`Picking Lists`,
+      icon: LuClipboardList,
+      to: path.to.pickingLists
+    },
+    {
       title: t`Recent`,
       icon: LuHistory,
       to: path.to.recent

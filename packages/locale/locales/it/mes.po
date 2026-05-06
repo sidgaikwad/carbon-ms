@@ -56,11 +56,11 @@ msgstr "{0} di {1} completati"
 msgid "{0} Scrapped"
 msgstr "{0} Scartati"
 
-#: apps/mes/app/components/AppSidebar.tsx:558
+#: apps/mes/app/components/AppSidebar.tsx:563
 msgid "About"
 msgstr "Informazioni"
 
-#: apps/mes/app/components/AppSidebar.tsx:412
+#: apps/mes/app/components/AppSidebar.tsx:417
 msgid "Account Settings"
 msgstr "Impostazioni Account"
 
@@ -136,6 +136,10 @@ msgstr "Allega File"
 msgid "Authentication Error"
 msgstr "Errore di Autenticazione"
 
+#: apps/mes/app/routes/x+/picking-list.$id.tsx:94
+msgid "Back"
+msgstr ""
+
 #. placeholder {0}: batch.readableId
 #. placeholder {1}: batch.quantity
 #: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:146
@@ -181,6 +185,8 @@ msgstr "Effettuando l'accesso, accetti i <0>Termini di Servizio</0> e l'<1>Infor
 #: apps/mes/app/components/JobOperation/components/Step.tsx:605
 #: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:658
 #: apps/mes/app/components/Suggestion.tsx:199
+#: apps/mes/app/routes/x+/picking-list.$id.confirm.tsx:191
+#: apps/mes/app/routes/x+/picking-list.$id.scan.$lineId.tsx:252
 #: apps/mes/app/routes/x+/timecard.tsx:413
 #: apps/mes/app/routes/x+/timecard.tsx:510
 msgid "Cancel"
@@ -215,6 +221,7 @@ msgstr "Cancella Filtri"
 #: apps/mes/app/routes/x+/active.tsx:103
 #: apps/mes/app/routes/x+/assigned.tsx:137
 #: apps/mes/app/routes/x+/maintenance.tsx:287
+#: apps/mes/app/routes/x+/picking-lists.tsx:87
 #: apps/mes/app/routes/x+/recent.tsx:103
 msgid "Clear Search"
 msgstr "Cancella Ricerca"
@@ -279,7 +286,7 @@ msgstr "Colonna: {0}"
 msgid "Columns"
 msgstr "Colonne"
 
-#: apps/mes/app/components/AppSidebar.tsx:420
+#: apps/mes/app/components/AppSidebar.tsx:425
 msgid "Company"
 msgstr "Azienda"
 
@@ -291,11 +298,24 @@ msgstr "Completa"
 msgid "Completed"
 msgstr "Completato"
 
-#: apps/mes/app/components/AppSidebar.tsx:353
+#: apps/mes/app/routes/x+/picking-list.$id.confirm.tsx:199
+#: apps/mes/app/routes/x+/picking-list.$id.tsx:112
+msgid "Confirm"
+msgstr ""
+
+#: apps/mes/app/routes/x+/picking-list.$id.confirm.tsx:129
+msgid "Confirm Picking List"
+msgstr ""
+
+#: apps/mes/app/routes/x+/picking-list.$id.confirm.tsx:132
+msgid "Confirming will post consumption ledger entries for all picked quantities. This cannot be undone."
+msgstr ""
+
+#: apps/mes/app/components/AppSidebar.tsx:358
 msgid "Console"
 msgstr "Console"
 
-#: apps/mes/app/components/AppSidebar.tsx:525
+#: apps/mes/app/components/AppSidebar.tsx:530
 msgid "Console Mode"
 msgstr "Modalità Console"
 
@@ -315,7 +335,7 @@ msgstr "Crea {0}"
 msgid "Customer"
 msgstr "Cliente"
 
-#: apps/mes/app/components/AppSidebar.tsx:489
+#: apps/mes/app/components/AppSidebar.tsx:494
 msgid "Dark Mode"
 msgstr "Modalità Scura"
 
@@ -430,18 +450,35 @@ msgstr "Centri di lavoro vuoti"
 msgid "End Operations"
 msgstr "Termina Operazioni"
 
+#: apps/mes/app/routes/x+/picking-list.$id.scan.$lineId.tsx:214
+msgid "Enter or scan entity ID"
+msgstr ""
+
 #. placeholder {0}: selectedPerson.name
 #: apps/mes/app/components/PinInOverlay.tsx:290
 msgid "Enter PIN for {0}"
 msgstr "Inserisci il PIN per {0}"
 
+#. placeholder {0}: result.data.status
+#: apps/mes/app/routes/x+/picking-list.$id.scan.$lineId.tsx:139
+msgid "Entity is {0}"
+msgstr ""
+
 #: apps/mes/app/routes/_public+/callback.tsx:153
 msgid "Error"
 msgstr "Errore"
 
+#: apps/mes/app/routes/x+/picking-list.$id.scan.$lineId.tsx:151
+msgid "Error validating entity"
+msgstr ""
+
 #: apps/mes/app/components/JobOperation/JobOperation.tsx:1015
 msgid "Estimated"
 msgstr "Stimato"
+
+#: apps/mes/app/routes/x+/picking-list.$id.confirm.tsx:183
+msgid "Explain why some items could not be picked..."
+msgstr ""
 
 #: apps/mes/app/components/AdjustInventory.tsx:96
 msgid "Failed to complete inventory adjustment"
@@ -531,7 +568,7 @@ msgstr "Quantità insufficiente"
 msgid "Inventory adjustment completed"
 msgstr "Rettifica inventario completata"
 
-#: apps/mes/app/components/AppSidebar.tsx:269
+#: apps/mes/app/components/AppSidebar.tsx:274
 msgid "Inventory Adjustments"
 msgstr "Rettifiche Inventario"
 
@@ -587,6 +624,14 @@ msgstr "Manodopera"
 msgid "Let's build something"
 msgstr "Costruiamo qualcosa"
 
+#: apps/mes/app/routes/x+/picking-list.$id.tsx:121
+msgid "lines picked"
+msgstr ""
+
+#: apps/mes/app/routes/x+/picking-list.$id.confirm.tsx:149
+msgid "Lines picked"
+msgstr ""
+
 #: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:326
 msgid "Loading item details..."
 msgstr "Caricamento dettagli articolo..."
@@ -596,7 +641,7 @@ msgstr "Caricamento dettagli articolo..."
 msgid "Loading..."
 msgstr "Caricamento..."
 
-#: apps/mes/app/components/AppSidebar.tsx:460
+#: apps/mes/app/components/AppSidebar.tsx:465
 msgid "Location"
 msgstr "Ubicazione"
 
@@ -638,7 +683,7 @@ msgstr "Accedi"
 msgid "Machine"
 msgstr "Macchina"
 
-#: apps/mes/app/components/AppSidebar.tsx:210
+#: apps/mes/app/components/AppSidebar.tsx:215
 #: apps/mes/app/routes/x+/maintenance.tsx:404
 msgid "Maintenance"
 msgstr "Manutenzione"
@@ -774,12 +819,17 @@ msgstr "Nessuna opzione trovata."
 msgid "No options found."
 msgstr "Nessuna opzione trovata."
 
+#: apps/mes/app/routes/x+/picking-lists.tsx:82
+msgid "No picking lists ready to pick"
+msgstr ""
+
 #: apps/mes/app/routes/x+/recent.tsx:112
 msgid "No recent operations"
 msgstr "Nessuna operazione recente"
 
 #: apps/mes/app/components/PinInOverlay.tsx:223
 #: apps/mes/app/routes/x+/operations.tsx:525
+#: apps/mes/app/routes/x+/picking-lists.tsx:80
 msgid "No results"
 msgstr "Nessun risultato"
 
@@ -845,7 +895,7 @@ msgstr "Ops. Non dovresti vedere questa pagina. In futuro sarà una pagina di de
 msgid "Open"
 msgstr "Aperto"
 
-#: apps/mes/app/components/AppSidebar.tsx:223
+#: apps/mes/app/components/AppSidebar.tsx:228
 msgid "Operations"
 msgstr "Operazioni"
 
@@ -860,6 +910,14 @@ msgstr "Eseguito dall'Operatore"
 #: packages/react/src/Form/FormLabel.tsx:44
 msgid "Optional"
 msgstr "Facoltativo"
+
+#: apps/mes/app/routes/x+/picking-list.$id.confirm.tsx:162
+msgid "Outstanding quantities"
+msgstr ""
+
+#: apps/mes/app/routes/x+/picking-list.$id.tsx:264
+msgid "Outstanding:"
+msgstr ""
 
 #: apps/mes/app/components/JobOperation/JobOperation.tsx:1714
 msgid "Parameters"
@@ -877,12 +935,30 @@ msgstr "Ispezione Superata"
 msgid "Pause"
 msgstr "Pausa"
 
+#: apps/mes/app/routes/x+/picking-list.$id.scan.$lineId.tsx:260
+#: apps/mes/app/routes/x+/picking-list.$id.tsx:247
+msgid "Pick"
+msgstr ""
+
+#: apps/mes/app/routes/x+/picking-list.$id.scan.$lineId.tsx:169
+msgid "Picked quantity cannot exceed entity quantity"
+msgstr ""
+
+#: apps/mes/app/routes/x+/picking-list.$id.scan.$lineId.tsx:165
+msgid "Picked quantity must be greater than 0"
+msgstr ""
+
 #. placeholder {0}: startColumn?.title
 #. placeholder {1}: startIndex + 1
 #. placeholder {2}: columnOrder.length
 #: apps/mes/app/components/Kanban/Kanban.tsx:84
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "Colonna {0} presa dalla posizione: {1} di {2}"
+
+#: apps/mes/app/components/AppSidebar.tsx:205
+#: apps/mes/app/routes/x+/picking-lists.tsx:55
+msgid "Picking Lists"
+msgstr ""
 
 #: apps/mes/app/components/PinInOverlay.tsx:357
 msgid "Pin Out"
@@ -946,7 +1022,11 @@ msgstr "Quantità"
 msgid "Quantity must be greater than 0"
 msgstr "La quantità deve essere maggiore di 0"
 
-#: apps/mes/app/components/AppSidebar.tsx:205
+#: apps/mes/app/routes/x+/picking-list.$id.tsx:221
+msgid "Re-scan"
+msgstr ""
+
+#: apps/mes/app/components/AppSidebar.tsx:210
 #: apps/mes/app/components/PinInOverlay.tsx:230
 #: apps/mes/app/routes/x+/recent.tsx:69
 msgid "Recent"
@@ -983,6 +1063,10 @@ msgstr "Rimuovi Inventario"
 msgid "Remove part"
 msgstr "Rimuovi componente"
 
+#: apps/mes/app/routes/x+/picking-list.$id.tsx:198
+msgid "Required"
+msgstr ""
+
 #: apps/mes/app/routes/x+/operations.tsx:479
 msgid "Sales Order"
 msgstr "Ordine di Vendita"
@@ -995,12 +1079,25 @@ msgstr "Salva"
 #: apps/mes/app/components/JobOperation/JobOperation.tsx:1598
 #: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:364
 #: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:484
+#: apps/mes/app/routes/x+/picking-list.$id.tsx:223
 msgid "Scan"
 msgstr "Scansiona"
+
+#: apps/mes/app/routes/x+/picking-list.$id.scan.$lineId.tsx:160
+msgid "Scan and validate an entity first"
+msgstr ""
 
 #: apps/mes/app/components/JobOperation/components/SerialSelectorModal.tsx:108
 msgid "Scan or enter serial number"
 msgstr "Scansiona o inserisci il numero di serie"
+
+#: apps/mes/app/routes/x+/picking-list.$id.scan.$lineId.tsx:189
+msgid "Scan the serial or batch ID, then confirm the picked quantity."
+msgstr ""
+
+#: apps/mes/app/routes/x+/picking-list.$id.scan.$lineId.tsx:186
+msgid "Scan tracking ID"
+msgstr ""
 
 #: apps/mes/app/components/AppSidebar.tsx:189
 #: apps/mes/app/components/JobOperation/JobOperation.tsx:450
@@ -1024,6 +1121,10 @@ msgstr "Scartato"
 #: apps/mes/app/routes/x+/recent.tsx:83
 msgid "Search"
 msgstr "Cerca"
+
+#: apps/mes/app/routes/x+/picking-lists.tsx:67
+msgid "Search by PL, job, or item"
+msgstr ""
 
 #: apps/mes/app/components/PinInOverlay.tsx:207
 msgid "Search operators..."
@@ -1133,6 +1234,10 @@ msgstr "Imposta orario di uscita"
 msgid "Setup"
 msgstr "Attrezzaggio"
 
+#: apps/mes/app/routes/x+/picking-list.$id.confirm.tsx:177
+msgid "Shortage Reason"
+msgstr ""
+
 #: apps/mes/app/routes/_public+/login.tsx:246
 msgid "Sign in with Email"
 msgstr "Accedi con Email"
@@ -1145,17 +1250,21 @@ msgstr "Accedi con Google"
 msgid "Sign in with Outlook"
 msgstr "Accedi con Outlook"
 
-#: apps/mes/app/components/AppSidebar.tsx:566
+#: apps/mes/app/components/AppSidebar.tsx:571
 msgid "Sign Out"
 msgstr "Esci"
 
-#: apps/mes/app/components/AppSidebar.tsx:406
+#: apps/mes/app/components/AppSidebar.tsx:411
 msgid "Signed in as {stationName}"
 msgstr "Connesso come {stationName}"
 
 #: apps/mes/app/components/JobOperation/JobOperation.tsx:1429
 msgid "Size"
 msgstr "Dimensione"
+
+#: apps/mes/app/routes/x+/picking-list.$id.confirm.tsx:165
+msgid "Some lines have not been fully picked. A shortage reason is required."
+msgstr ""
 
 #: apps/mes/app/components/JobOperation/JobOperation.tsx:1012
 msgid "Source"
@@ -1177,7 +1286,7 @@ msgstr "Avvia"
 msgid "Station User"
 msgstr "Utente Stazione"
 
-#: apps/mes/app/components/AppSidebar.tsx:400
+#: apps/mes/app/components/AppSidebar.tsx:405
 msgid "Station: {stationName}"
 msgstr "Stazione: {stationName}"
 
@@ -1218,7 +1327,7 @@ msgstr "Suggerimento"
 msgid "Support Required"
 msgstr "Supporto Richiesto"
 
-#: apps/mes/app/components/AppSidebar.tsx:396
+#: apps/mes/app/components/AppSidebar.tsx:401
 msgid "Switch Operator"
 msgstr "Cambia Operatore"
 
@@ -1234,6 +1343,10 @@ msgstr "La quantità completata per questa operazione è inferiore alla quantit�
 #: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:182
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Ci sono materiali tracciati per numero di serie o lotto nella distinta base che non sono stati completamente prelevati. Completare senza prelevare potrebbe causare registrazioni di tracciabilità errate."
+
+#: apps/mes/app/routes/x+/picking-list.$id.tsx:129
+msgid "This picking list has no lines"
+msgstr ""
 
 #: apps/mes/app/routes/x+/operations.tsx:480
 msgid "Thumbnail"
@@ -1252,7 +1365,7 @@ msgstr "Tempo Lavorato: {0}"
 msgid "Today"
 msgstr "Oggi"
 
-#: apps/mes/app/components/AppSidebar.tsx:282
+#: apps/mes/app/components/AppSidebar.tsx:287
 msgid "Tools"
 msgstr "Utensili"
 
@@ -1270,6 +1383,10 @@ msgstr "Tempo totale: {0}"
 msgid "Total: {0}"
 msgstr "Totale: {0}"
 
+#: apps/mes/app/routes/x+/picking-list.$id.scan.$lineId.tsx:134
+msgid "Tracked entity not found"
+msgstr ""
+
 #: apps/mes/app/components/JobOperation/JobOperation.tsx:1595
 msgid "Tracking Labels"
 msgstr "Etichette di Tracciabilità"
@@ -1277,6 +1394,10 @@ msgstr "Etichette di Tracciabilità"
 #: apps/mes/app/components/JobOperation/components/Chat.tsx:213
 msgid "Type a message..."
 msgstr "Scrivi un messaggio..."
+
+#: apps/mes/app/routes/x+/picking-lists.tsx:136
+msgid "Unassigned"
+msgstr ""
 
 #: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:179
 msgid "Unissued serial/batch materials"
