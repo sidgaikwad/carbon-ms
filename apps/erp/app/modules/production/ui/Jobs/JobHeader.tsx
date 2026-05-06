@@ -97,6 +97,8 @@ const JobHeader = () => {
         return t`Production Events`;
       case "quantities":
         return t`Production Quantities`;
+      case "picking-lists":
+        return t`Picking Lists`;
       default:
         return t`Job`;
     }
@@ -135,6 +137,8 @@ const JobHeader = () => {
       return "events";
     if (location.pathname.includes(path.to.jobProductionQuantities(jobId)))
       return "quantities";
+    if (location.pathname.includes(path.to.jobPickingLists(jobId)))
+      return "picking-lists";
     return "details";
   };
 
@@ -287,12 +291,14 @@ const JobHeader = () => {
                   </DropdownMenuRadioItem>
                 ))}
                 <DropdownMenuSeparator />
-                {["events", "quantities", "step-records"].map((i) => (
-                  <DropdownMenuRadioItem value={i} key={i}>
-                    <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
-                    {getExplorerLabel(i)}
-                  </DropdownMenuRadioItem>
-                ))}
+                {["events", "quantities", "step-records", "picking-lists"].map(
+                  (i) => (
+                    <DropdownMenuRadioItem value={i} key={i}>
+                      <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
+                      {getExplorerLabel(i)}
+                    </DropdownMenuRadioItem>
+                  )
+                )}
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -462,6 +468,8 @@ function getExplorerMenuIcon(type: string) {
       return <LuClock />;
     case "quantities":
       return <LuSquareSigma />;
+    case "picking-lists":
+      return <LuClipboardList />;
     default:
       return <LuCirclePlay />;
   }
@@ -479,6 +487,8 @@ const getExplorePath = (jobId: string, type: string) => {
       return path.to.jobProductionEvents(jobId);
     case "quantities":
       return path.to.jobProductionQuantities(jobId);
+    case "picking-lists":
+      return path.to.jobPickingLists(jobId);
     default:
       return path.to.jobDetails(jobId);
   }

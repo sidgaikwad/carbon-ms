@@ -2069,7 +2069,8 @@ export async function getPickingList(
 
 export async function getPickingListLines(
   client: SupabaseClient<Database>,
-  pickingListId: string
+  pickingListId: string,
+  companyId?: string
 ) {
   const { data: lines, error } = await client
     .from("pickingListLine")
@@ -2091,25 +2092,33 @@ export async function getPickingListLines(
     ...new Set(lines.map((l) => l.jobMaterialId).filter(Boolean))
   ];
 
-  const [itemsRes, storageUnitsRes, jobMaterialsRes] = await Promise.all([
-    itemIds.length
-      ? client
-          .from("item")
-          .select(
-            "id, name, readableId, unitOfMeasureCode, itemTrackingType, thumbnailPath"
-          )
-          .in("id", itemIds)
-      : Promise.resolve({ data: [], error: null } as const),
-    storageUnitIds.length
-      ? client.from("storageUnit").select("id, name").in("id", storageUnitIds)
-      : Promise.resolve({ data: [], error: null } as const),
-    jobMaterialIds.length
-      ? client
-          .from("jobMaterial")
-          .select("id, estimatedQuantity, quantityIssued")
-          .in("id", jobMaterialIds)
-      : Promise.resolve({ data: [], error: null } as const)
-  ]);
+  const [itemsRes, storageUnitsRes, jobMaterialsRes, companySettingsRes] =
+    await Promise.all([
+      itemIds.length
+        ? client
+            .from("item")
+            .select(
+              "id, name, readableId, unitOfMeasureCode, itemTrackingType, thumbnailPath, overpickTolerancePercent"
+            )
+            .in("id", itemIds)
+        : Promise.resolve({ data: [], error: null } as const),
+      storageUnitIds.length
+        ? client.from("storageUnit").select("id, name").in("id", storageUnitIds)
+        : Promise.resolve({ data: [], error: null } as const),
+      jobMaterialIds.length
+        ? client
+            .from("jobMaterial")
+            .select("id, estimatedQuantity, quantityIssued")
+            .in("id", jobMaterialIds)
+        : Promise.resolve({ data: [], error: null } as const),
+      companyId
+        ? client
+            .from("companySettings")
+            .select("defaultOverpickTolerancePercent")
+            .eq("id", companyId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null } as const)
+    ]);
 
   const joinError =
     itemsRes.error ?? storageUnitsRes.error ?? jobMaterialsRes.error;
@@ -2123,19 +2132,27 @@ export async function getPickingListLines(
     (jobMaterialsRes.data ?? []).map((row) => [row.id, row])
   );
 
-  const merged = lines.map((line) => ({
-    ...line,
-    item: line.itemId ? (itemById.get(line.itemId) ?? null) : null,
-    storageUnit: line.storageUnitId
-      ? (suById.get(line.storageUnitId) ?? null)
-      : null,
-    destinationStorageUnit: line.destinationStorageUnitId
-      ? (suById.get(line.destinationStorageUnitId) ?? null)
-      : null,
-    jobMaterial: line.jobMaterialId
-      ? (jmById.get(line.jobMaterialId) ?? null)
-      : null
-  }));
+  const defaultTolerance =
+    (companySettingsRes.data as any)?.defaultOverpickTolerancePercent ?? 2;
+
+  const merged = lines.map((line) => {
+    const item = line.itemId ? (itemById.get(line.itemId) ?? null) : null;
+    const itemTolerance = (item as any)?.overpickTolerancePercent;
+    return {
+      ...line,
+      item,
+      storageUnit: line.storageUnitId
+        ? (suById.get(line.storageUnitId) ?? null)
+        : null,
+      destinationStorageUnit: line.destinationStorageUnitId
+        ? (suById.get(line.destinationStorageUnitId) ?? null)
+        : null,
+      jobMaterial: line.jobMaterialId
+        ? (jmById.get(line.jobMaterialId) ?? null)
+        : null,
+      overpickTolerancePercent: itemTolerance ?? defaultTolerance
+    };
+  });
 
   return { data: merged, error: null };
 }

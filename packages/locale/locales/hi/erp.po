@@ -138,7 +138,7 @@ msgstr "एक सामग्री एक भौतिक वस्तु ह�
 msgid "A name is required to save a view"
 msgstr "एक दृश्य को सहेजने के लिए एक नाम आवश्यक है"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:705
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:715
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "प्रत्येक आपूर्तिकर्ता के लिए एक नया क्रय आदेश बनाया जाएगा। वैकल्पिक रूप से, आप आपूर्तिकर्ता के लिए एक मौजूदा ड्राफ्ट क्रय आदेश चुन सकते हैं और बाहरी संचालन जोड़ सकते हैं।"
 
@@ -482,7 +482,7 @@ msgstr "समूह जोड़ें"
 msgid "Add Item"
 msgstr "आइटम जोड़ें"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:347
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:360
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferLines.tsx:352
 #: apps/erp/app/routes/x+/picking-list+/$id.line.new.tsx:171
 msgid "Add Line"
@@ -608,7 +608,7 @@ msgstr "आपूर्तिकर्ता जोड़ें"
 msgid "Add Timecard"
 msgstr "टाइमकार्ड जोड़ें"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1121
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1131
 msgid "Add to stock for future use"
 msgstr "भविष्य के उपयोग के लिए स्टॉक में जोड़ें"
 
@@ -839,7 +839,7 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को रद्द करना चाहते हैं? यह सभी संबंधित आपूर्तिकर्ता उद्धरणों को भी रद्द कर देगा।"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:854
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:864
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस कार्य को रद्द करना चाहते हैं? यह अब शॉप फ्लोर पर उपलब्ध नहीं होगा।"
 
@@ -1258,7 +1258,7 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to reject this quote?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस उद्धरण को अस्वीकार करना चाहते हैं?"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:690
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:700
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस कार्य को जारी करना चाहते हैं? यह शॉप फ्लोर पर उपलब्ध हो जाएगा, और खरीद और उत्पादन को चलाएगा।"
 
@@ -1363,6 +1363,7 @@ msgstr "मुझे असाइन किया गया"
 #: apps/erp/app/modules/sales/ui/Quotes/QuotesTable.tsx:179
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrdersTable.tsx:384
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQsTable.tsx:134
+#: apps/erp/app/routes/x+/job+/$jobId.picking-lists.tsx:86
 msgid "Assignee"
 msgstr "असाइनी"
 
@@ -1788,9 +1789,9 @@ msgstr "केवल सक्रिय ब्रेक को अक्षम �
 #: apps/erp/app/modules/people/ui/Holidays/HolidayForm.tsx:82
 #: apps/erp/app/modules/people/ui/Shifts/ShiftForm.tsx:99
 #: apps/erp/app/modules/people/ui/Timecards/TimecardForm.tsx:117
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:791
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:850
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1208
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:801
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:860
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1218
 #: apps/erp/app/modules/production/ui/Jobs/JobMakeMethodTools.tsx:442
 #: apps/erp/app/modules/production/ui/Jobs/JobMakeMethodTools.tsx:563
 #: apps/erp/app/modules/production/ui/Jobs/JobMakeMethodTools.tsx:619
@@ -1893,7 +1894,7 @@ msgstr "केवल सक्रिय ब्रेक को अक्षम �
 msgid "Cancel"
 msgstr "रद्द करें"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:870
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:880
 msgid "Cancel Job"
 msgstr "नौकरी रद्द करें"
 
@@ -2306,8 +2307,8 @@ msgstr "सभी को पूर्ण करें"
 msgid "Complete all quantities on barcode scan"
 msgstr "बारकोड स्कैन पर सभी मात्राएं पूर्ण करें"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1018
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1212
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1028
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1222
 msgid "Complete Job"
 msgstr "नौकरी पूरी करें"
 
@@ -2469,6 +2470,10 @@ msgstr "पासवर्ड की पुष्टि करें"
 #: apps/erp/app/modules/inventory/ui/PickingLists/PickingListConfirmModal.tsx:65
 #: apps/erp/app/modules/inventory/ui/PickingLists/PickingListConfirmModal.tsx:135
 msgid "Confirm Picking List"
+msgstr ""
+
+#: apps/erp/app/routes/x+/job+/$jobId.picking-lists.tsx:92
+msgid "Confirmed"
 msgstr ""
 
 #: apps/erp/app/modules/inventory/ui/PickingLists/PickingListConfirmModal.tsx:68
@@ -4014,7 +4019,7 @@ msgstr "आपूर्तिकर्ता उद्धरण हटाएं"
 msgid "Delete Supplier Type"
 msgstr "आपूर्तिकर्ता प्रकार हटाएं"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:321
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:334
 msgid "Delete this line?"
 msgstr ""
 
@@ -4209,7 +4214,7 @@ msgstr "सीधा"
 msgid "Disabled"
 msgstr "अक्षम"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1154
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1164
 msgid "Discard"
 msgstr "त्यागें"
 
@@ -4287,7 +4292,7 @@ msgstr "दस्तावेज़:"
 msgid "Documents"
 msgstr "दस्तावेज़"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:861
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:871
 msgid "Don't Cancel"
 msgstr "रद्द न करें"
 
@@ -4359,6 +4364,10 @@ msgstr "ड्रॉप शिपमेंट स्थितियाँ"
 #: apps/erp/app/components/ImportCSVModal/UploadCSV.tsx:170
 msgid "Drop your file here, or click to browse."
 msgstr "अपनी फ़ाइल यहाँ ड्रॉप करें, या ब्राउज़ करने के लिए क्लिक करें।"
+
+#: apps/erp/app/routes/x+/job+/$jobId.picking-lists.tsx:89
+msgid "Due"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 #: apps/erp/app/routes/x+/production+/_index.tsx:958
@@ -6363,7 +6372,7 @@ msgstr "इनबाउंड निरीक्षण: विभिन्न �
 msgid "Inbox"
 msgstr "इनबॉक्स"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1103
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1113
 msgid "Include extra parts in shipment"
 msgstr "शिपमेंट में अतिरिक्त पार्ट्स शामिल करें"
 
@@ -6896,7 +6905,7 @@ msgstr "इस विंडो के अंदर आइटम को एक �
 #: apps/erp/app/modules/inventory/ui/PickingLists/PickingListsTable.tsx:93
 #: apps/erp/app/modules/people/ui/Person/PersonJob.tsx:36
 #: apps/erp/app/modules/people/ui/Person/PersonSidebar/usePersonSidebar.tsx:23
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:101
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:103
 #: apps/erp/app/modules/production/ui/Jobs/JobsTable.tsx:682
 #: apps/erp/app/modules/production/ui/Planning/ProductionPlanningOrderDrawer.tsx:366
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderLineForm.tsx:932
@@ -7180,7 +7189,7 @@ msgstr "सटीक मिलान के लिए खाली छोड़�
 msgid "Left item"
 msgstr "बाईं ओर की वस्तु"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1078
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1088
 msgid "Leftover Parts Detected"
 msgstr "बचे हुए पार्ट्स का पता चला"
 
@@ -7232,7 +7241,7 @@ msgstr "लाइन स्थिति"
 msgid "Linear Team"
 msgstr "Linear Team"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:333
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:346
 msgid "Lines"
 msgstr ""
 
@@ -7350,7 +7359,7 @@ msgstr "लोड हो रहा है..."
 #: apps/erp/app/modules/people/ui/Timecards/TimecardsTable.tsx:170
 #: apps/erp/app/modules/production/ui/Jobs/JobForm.tsx:332
 #: apps/erp/app/modules/production/ui/Jobs/JobForm.tsx:494
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1050
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1060
 #: apps/erp/app/modules/production/ui/Jobs/JobsTable.tsx:509
 #: apps/erp/app/modules/production/ui/Projection/DemandProjectionForm.tsx:116
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:165
@@ -7378,6 +7387,7 @@ msgstr "लोड हो रहा है..."
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQsTable.tsx:168
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:83
 #: apps/erp/app/routes/x+/inventory+/picking-lists.new.tsx:192
+#: apps/erp/app/routes/x+/job+/$jobId.picking-lists.tsx:83
 #: apps/erp/app/routes/x+/schedule+/dates.tsx:820
 #: apps/erp/app/routes/x+/schedule+/operations.tsx:451
 #: apps/erp/app/routes/x+/users+/operators.new.tsx:158
@@ -7957,7 +7967,7 @@ msgstr "मिनट/टुकड़ा"
 msgid "Missing Information"
 msgstr "लापता जानकारी"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:760
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:770
 msgid "Missing Operations"
 msgstr "ऑपरेशन गायब हैं"
 
@@ -7965,7 +7975,7 @@ msgstr "ऑपरेशन गायब हैं"
 msgid "Missing Shipping Costs"
 msgstr "शिपिंग लागत अनुपलब्ध"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:775
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:785
 msgid "Missing Suppliers"
 msgstr "आपूर्तिकर्ता गायब हैं"
 
@@ -8066,7 +8076,7 @@ msgstr "अधिक क्रियाएं"
 #: apps/erp/app/modules/items/ui/Materials/MaterialHeader.tsx:65
 #: apps/erp/app/modules/items/ui/Parts/PartHeader.tsx:61
 #: apps/erp/app/modules/items/ui/Tools/ToolHeader.tsx:59
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:173
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:177
 #: apps/erp/app/modules/production/ui/Procedures/ProcedureHeader.tsx:80
 #: apps/erp/app/modules/production/ui/Schedule/Kanban/components/ItemCard.tsx:183
 #: apps/erp/app/modules/production/ui/Schedule/Kanban/components/JobCard.tsx:288
@@ -8631,7 +8641,7 @@ msgstr "कोई क्षमता जोड़ी नहीं गई"
 msgid "No Access"
 msgstr "कोई एक्सेस नहीं"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1157
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1167
 msgid "No action needed"
 msgstr "कोई कार्रवाई की आवश्यकता नहीं है"
 
@@ -8808,6 +8818,10 @@ msgstr "कोई भाग ID नहीं"
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:765
 msgid "No parts added yet"
 msgstr "अभी तक कोई पार्ट जोड़ा नहीं गया"
+
+#: apps/erp/app/routes/x+/job+/$jobId.picking-lists.tsx:69
+msgid "No picking lists exist for this job yet."
+msgstr ""
 
 #: apps/erp/app/modules/items/ui/Item/ItemPlanningChart.tsx:348
 msgid "No planning data"
@@ -9315,7 +9329,7 @@ msgstr ""
 msgid "Outstanding quantities"
 msgstr ""
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:232
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:245
 msgid "Outstanding:"
 msgstr ""
 
@@ -9335,7 +9349,7 @@ msgstr "ओवरहेड दर"
 msgid "Overhead Rate (Hourly)"
 msgstr "ओवरहेड दर (प्रति घंटा)"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:239
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:252
 msgid "Overpick:"
 msgstr ""
 
@@ -9640,11 +9654,11 @@ msgstr "एक तारीख चुनें या इसे साफ कर
 msgid "Pick List"
 msgstr "पिक लिस्ट"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:336
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:349
 msgid "picked"
 msgstr ""
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:204
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:217
 #: apps/erp/app/routes/x+/picking-list+/$id.pdf.tsx:132
 msgid "Picked"
 msgstr ""
@@ -9666,11 +9680,14 @@ msgid "Picker Signature"
 msgstr ""
 
 #: apps/erp/app/modules/inventory/ui/PickingLists/PickingListsTable.tsx:53
+#: apps/erp/app/routes/x+/job+/$jobId.picking-lists.tsx:77
 msgid "Picking List"
 msgstr ""
 
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:54
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:101
 #: apps/erp/app/routes/x+/inventory+/picking-lists.tsx:16
+#: apps/erp/app/routes/x+/job+/$jobId.picking-lists.tsx:56
 #: apps/erp/app/routes/x+/picking-list+/$id.tsx:20
 msgid "Picking Lists"
 msgstr ""
@@ -10237,7 +10254,7 @@ msgstr "क्रय आदेश सफलतापूर्वक हटा �
 msgid "Purchase Orders"
 msgstr "क्रय आदेश"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:702
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:712
 msgid "Purchase orders required"
 msgstr "क्रय आदेश आवश्यक हैं"
 
@@ -10445,11 +10462,11 @@ msgstr "मात्रा"
 msgid "Quantity"
 msgstr "मात्रा"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1062
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1072
 msgid "Quantity Completed"
 msgstr "पूर्ण मात्रा"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1068
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1078
 msgid "Quantity is derived from completed serials/batches in MES and cannot be edited."
 msgstr "मात्रा MES में पूर्ण सीरीज़/बैच से प्राप्त है और संपादित नहीं की जा सकती।"
 
@@ -10673,12 +10690,12 @@ msgid "Receive"
 msgstr "प्राप्त करें"
 
 #. placeholder {0}: job.jobId
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1019
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1029
 msgid "Receive {0} to Inventory"
 msgstr "{0} को इन्वेंटरी में प्राप्त करें"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1118
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1184
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1128
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1194
 msgid "Receive to Inventory"
 msgstr "इन्वेंटरी में प्राप्त करें"
 
@@ -10788,8 +10805,8 @@ msgstr "अस्वीकृत तारीख"
 msgid "Release"
 msgstr "रिलीज़"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:671
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:816
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:681
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:826
 msgid "Release Job"
 msgstr "जॉब रिलीज़ करें"
 
@@ -12226,12 +12243,12 @@ msgstr "शिफ्ट"
 msgid "Ship"
 msgstr "भेजें"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1139
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1149
 msgid "Ship some, stock some"
 msgstr "कुछ भेजें, कुछ स्टॉक करें"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1100
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1168
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1110
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1178
 msgid "Ship to Customer"
 msgstr "ग्राहक को भेजें"
 
@@ -12579,7 +12596,7 @@ msgstr "विशिष्ट ग्राहक"
 msgid "Specific Items"
 msgstr "विशिष्ट आइटम"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1136
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1146
 #: apps/erp/app/modules/quality/ui/Issue/AssociatedItemsList.tsx:656
 msgid "Split"
 msgstr "विभाजित करें"
@@ -12738,6 +12755,7 @@ msgstr "सांख्यिकीय स्वीकृति विफल ह
 #: apps/erp/app/modules/sales/ui/Quotes/QuotesTable.tsx:115
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrdersTable.tsx:158
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQsTable.tsx:90
+#: apps/erp/app/routes/x+/job+/$jobId.picking-lists.tsx:80
 #: apps/erp/app/routes/x+/purchasing+/_index.tsx:659
 #: apps/erp/app/routes/x+/purchasing+/_index.tsx:810
 #: apps/erp/app/routes/x+/quality+/_index.tsx:977
@@ -12848,7 +12866,7 @@ msgstr "स्टोरेज प्रकार"
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:458
 #: apps/erp/app/modules/items/ui/Item/BillOfMaterial.tsx:1011
 #: apps/erp/app/modules/production/ui/Jobs/JobBillOfMaterial.tsx:966
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1056
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1066
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderLineForm.tsx:682
 #: apps/erp/app/modules/quality/ui/Gauge/GaugeForm.tsx:439
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteBillOfMaterial.tsx:978
@@ -13455,7 +13473,7 @@ msgstr "थीम"
 msgid "Theme Color"
 msgstr "थीम रंग"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:763
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:773
 msgid "There are Bills of Processes associated with this job that have no operations. Please assign an operation to each make method before releasing it."
 msgstr "इस नौकरी से जुड़ी प्रक्रियाओं के बिल हैं जिनके पास कोई संचालन नहीं है। इसे जारी करने से पहले कृपया प्रत्येक निर्माण विधि को एक संचालन असाइन करें।"
 
@@ -13463,7 +13481,7 @@ msgstr "इस नौकरी से जुड़ी प्रक्रिय�
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "इस RFQ के लिए तुलना करने के लिए कोई सक्रिय आपूर्तिकर्ता उद्धरण नहीं हैं।"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:778
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:788
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "इस नौकरी से जुड़े बाहरी संचालन हैं जिनके पास कोई आपूर्तिकर्ता नहीं है। इसे जारी करने से पहले कृपया प्रत्येक बाहरी संचालन को एक आपूर्तिकर्ता असाइन करें।"
 
@@ -13507,15 +13525,15 @@ msgstr "यह वह महीना है जब आपका कर वर�
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "इस आइटम के बिल ऑफ मेटेरियल्स में शेल्फ-लाइफ सक्षम इनपुट नहीं हैं, इसलिए BOM से कोई एक्सपायरी की गणना नहीं की जाएगी।"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1024
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1034
 msgid "This job will be received to inventory. It will no longer be available on the shop floor."
 msgstr "यह जॉब इन्वेंटरी में प्राप्त किया जाएगा। यह शॉप फ्लोर पर अब उपलब्ध नहीं होगा।"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1023
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1033
 msgid "This job will no longer be available on the shop floor."
 msgstr "यह नौकरी अब शॉप फ्लोर पर उपलब्ध नहीं होगी।"
 
-#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:356
+#: apps/erp/app/modules/inventory/ui/PickingLists/PickingListLines.tsx:369
 msgid "This picking list has no lines yet."
 msgstr ""
 
@@ -13682,7 +13700,7 @@ msgstr "अवधि टॉगल करें"
 
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:196
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceHeader.tsx:184
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:159
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:163
 #: apps/erp/app/modules/production/ui/Procedures/ProcedureHeader.tsx:66
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderHeader.tsx:156
 #: apps/erp/app/modules/purchasing/ui/PurchasingRfq/PurchasingRFQHeader.tsx:95
@@ -13701,7 +13719,7 @@ msgstr "स्तर टॉगल करें"
 
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:384
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceHeader.tsx:382
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:403
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:409
 #: apps/erp/app/modules/production/ui/Procedures/ProcedureHeader.tsx:165
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderHeader.tsx:557
 #: apps/erp/app/modules/purchasing/ui/PurchasingRfq/PurchasingRFQHeader.tsx:298
@@ -14039,6 +14057,7 @@ msgstr "अनुमोदित नहीं आपूर्तिकर्त�
 #: apps/erp/app/components/Assignee.tsx:147
 #: apps/erp/app/components/Form/Employee.tsx:44
 #: apps/erp/app/modules/quality/ui/Issue/IssueTask.tsx:201
+#: apps/erp/app/routes/x+/job+/$jobId.picking-lists.tsx:116
 msgid "Unassigned"
 msgstr "अनुत्तरित"
 
@@ -14459,7 +14478,7 @@ msgstr "वैध अवधि"
 msgid "Valid To"
 msgstr "वैध तक"
 
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:679
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:689
 msgid "Validating job..."
 msgstr "नौकरी को मान्य कर रहे हैं..."
 
@@ -15031,7 +15050,7 @@ msgstr "आप {0} पर क्लॉक इन हुए हैं। आप �
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity
-#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1081
+#: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1091
 msgid ""
 "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"

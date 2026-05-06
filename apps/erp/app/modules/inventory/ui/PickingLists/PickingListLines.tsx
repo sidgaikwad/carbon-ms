@@ -156,9 +156,22 @@ function PickingListLineRow({
                     }}
                     onBlur={() => {
                       const n = parseFloat(qty);
-                      if (!isNaN(n) && n !== line.pickedQuantity) {
-                        onPick(line, n);
+                      if (isNaN(n) || n === line.pickedQuantity) return;
+                      const required =
+                        line.adjustedQuantity ?? line.estimatedQuantity ?? 0;
+                      const tolerance =
+                        (line as any).overpickTolerancePercent ?? 2;
+                      const warnAt = required * (1 + tolerance / 100);
+                      if (required > 0 && n > warnAt && n <= required * 2) {
+                        const ok = window.confirm(
+                          `Picking ${n} ${line.unitOfMeasureCode ?? ""} exceeds the required ${required} by more than ${tolerance}%. Continue?`
+                        );
+                        if (!ok) {
+                          setQty(String(line.pickedQuantity ?? 0));
+                          return;
+                        }
                       }
+                      onPick(line, n);
                     }}
                   />
                   <span className="text-xs text-muted-foreground">

@@ -33,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [pickingList, pickingListLines] = await Promise.all([
     getPickingList(serviceRole, id),
-    getPickingListLines(serviceRole, id)
+    getPickingListLines(serviceRole, id, companyId)
   ]);
 
   if (pickingList.error) {
