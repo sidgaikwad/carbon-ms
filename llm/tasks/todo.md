@@ -7,19 +7,17 @@
 ## Build Order
 
 ### P0 Gap Closure
-- [ ] **1. Multi-shelf allocation + 3-level destination resolution in RPC** — single migration update; biggest correctness win.
-  - Walk shelves by available qty DESC; one PL line per contributing shelf; last line carries shortage if still short.
-  - Resolve `destinationStorageUnitId` via `COALESCE(workCenter.defaultStorageUnitId → pickingList.destinationStorageUnitId → NULL)` per line.
-- [ ] **2. Auto-gen PL trigger** on `job.status → Planned/Released`. Idempotent via `pickingStatus = 'Not Generated'` guard.
-- [ ] **3. Soft over-pick warning tier** with tolerance hierarchy on `companySettings`/`itemGroup`/`item`.
-- [ ] **4. `$jobId.picking-lists.tsx`** job tab (read-only list of PLs for this job).
-- [ ] **5. MES routes** — list, pick screen, scan modal, confirm. Mirror stock-transfer scan UX.
+- [x] **1. Multi-shelf allocation + 3-level destination resolution in RPC** — `20260507000000`.
+- [x] **2. Auto-gen PL trigger** on `job.status → Planned/Released` — `20260507000001`.
+- [x] **3. Soft over-pick warning tier** — `20260507000002` + service/UI updates.
+- [x] **4. `$jobId.picking-lists.tsx`** job tab + JobHeader plumbing.
+- [x] **5. MES routes** — `picking-lists`, `picking-list.$id`, `picking-list.$id.scan.$lineId`, `picking-list.$id.confirm`, `picking-list.$id.pick` + sidebar nav.
 
 ### P1 — Job Staging
-- [ ] **6. Schema** — `makeMethod.finishToStorageUnitId`, `job.finishToStorageUnitId`. Propagate at job creation.
-- [ ] **7. `get_job_staging_assessment` RPC** — per-material atPick/elsewhere/shortage/sourceShelf.
-- [ ] **8. Edge fn ops** — `stageJob` (returns assessment), `generateStockTransfer` (creates stockTransfer lines for shortages).
-- [ ] **9. `$jobId.staging.tsx`** route + UI.
+- [x] **6. Schema** — `20260507000003` adds finishTo cols + propagation trigger.
+- [x] **7. `get_job_staging_assessment` RPC** — `20260507000004`.
+- [x] **8. Edge fn ops** — `stageJob` and `generateStockTransfer` in `pick/index.ts`.
+- [x] **9. `$jobId.staging.tsx`** route + UI + JobHeader plumbing.
 
 ## Out of scope (still deferred)
 - Picking Waves (explicitly archived in rough notes)

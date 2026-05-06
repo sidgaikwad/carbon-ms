@@ -76,7 +76,6 @@ const payloadValidator = z.discriminatedUnion("type", [
     companyId: z.string(),
     userId: z.string(),
   }),
-  // Legacy stubs (P1 — not yet implemented)
   z.object({
     type: z.literal("stageJob"),
     jobId: z.string(),
@@ -85,8 +84,7 @@ const payloadValidator = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("generateStockTransfer"),
-    locationId: z.string(),
-    jobIds: z.array(z.string()).optional(),
+    jobId: z.string(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -732,6 +730,101 @@ async function cancelPickingList(client: any, payload: any) {
   return { success: true };
 }
 
+// ─── Job Staging (P1) ─────────────────────────────────────────
+
+async function stageJob(client: any, payload: any) {
+  const { jobId, companyId } = payload;
+
+  const { data: assessment, error: rpcError } = await client.rpc(
+    "get_job_staging_assessment",
+    { p_job_id: jobId, p_company_id: companyId },
+  );
+
+  if (rpcError) throw new Error(rpcError.message ?? "Staging assessment failed");
+
+  return {
+    jobId,
+    materials: assessment ?? [],
+    totalShortageMaterials: (assessment ?? []).filter((m: any) => Number(m.shortage) > 0).length,
+  };
+}
+
+async function generateStockTransfer(client: any, payload: any) {
+  const { jobId, companyId, userId } = payload;
+
+  const { data: job, error: jobError } = await client
+    .from("job")
+    .select("id, locationId, jobId")
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (jobError || !job) throw new Error("Job not found");
+  if (!job.locationId) throw new Error("Job has no location — cannot stage");
+
+  const { data: assessment, error: rpcError } = await client.rpc(
+    "get_job_staging_assessment",
+    { p_job_id: jobId, p_company_id: companyId },
+  );
+  if (rpcError) throw new Error(rpcError.message ?? "Staging assessment failed");
+
+  const shortages = (assessment ?? []).filter(
+    (m: any) =>
+      Number(m.shortage) > 0 &&
+      m.sourceStorageUnitId &&
+      m.pickStorageUnitId &&
+      m.sourceStorageUnitId !== m.pickStorageUnitId,
+  );
+
+  if (shortages.length === 0) {
+    return { stockTransferId: null, lineCount: 0, message: "No actionable shortages" };
+  }
+
+  // Generate readable stockTransferId via the shared sequence helper.
+  const { data: stockTransferReadable, error: seqError } = await client.rpc(
+    "get_next_sequence",
+    { sequence_name: "stockTransfer", company_id: companyId },
+  );
+  if (seqError) throw new Error(seqError.message ?? "Could not get stock transfer sequence");
+
+  const { data: st, error: stError } = await client
+    .from("stockTransfer")
+    .insert({
+      stockTransferId: stockTransferReadable,
+      locationId: job.locationId,
+      status: "Draft",
+      companyId,
+      createdBy: userId,
+    })
+    .select()
+    .single();
+
+  if (stError || !st) throw new Error(stError?.message ?? "Failed to create stock transfer");
+
+  const lineInserts = shortages.map((s: any) => ({
+    stockTransferId: st.id,
+    jobId,
+    jobMaterialId: s.jobMaterialId,
+    itemId: s.itemId,
+    fromStorageUnitId: s.sourceStorageUnitId,
+    toStorageUnitId: s.pickStorageUnitId,
+    quantity: Math.min(Number(s.shortage), Number(s.sourceStorageUnitQuantity ?? 0)),
+    companyId,
+    createdBy: userId,
+  }));
+
+  const { error: lineError } = await client
+    .from("stockTransferLine")
+    .insert(lineInserts);
+  if (lineError) throw new Error(lineError.message ?? "Failed to create stock transfer lines");
+
+  return {
+    stockTransferId: st.id,
+    stockTransferReadableId: st.stockTransferId,
+    lineCount: lineInserts.length,
+  };
+}
+
 // ─── Server ───────────────────────────────────────────────────
 
 serve(async (req: Request) => {
@@ -778,11 +871,9 @@ serve(async (req: Request) => {
       case "reversePickingList":
         return Response.json(await reversePickingList(client, validated), { headers: corsHeaders });
       case "stageJob":
+        return Response.json(await stageJob(client, validated), { headers: corsHeaders });
       case "generateStockTransfer":
-        return new Response(
-          JSON.stringify({ error: "Not yet implemented (P1)" }),
-          { status: 501, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+        return Response.json(await generateStockTransfer(client, validated), { headers: corsHeaders });
       default:
         return new Response(
           JSON.stringify({ error: "Invalid operation type" }),

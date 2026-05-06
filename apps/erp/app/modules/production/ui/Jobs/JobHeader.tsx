@@ -99,6 +99,8 @@ const JobHeader = () => {
         return t`Production Quantities`;
       case "picking-lists":
         return t`Picking Lists`;
+      case "staging":
+        return t`Staging`;
       default:
         return t`Job`;
     }
@@ -139,6 +141,7 @@ const JobHeader = () => {
       return "quantities";
     if (location.pathname.includes(path.to.jobPickingLists(jobId)))
       return "picking-lists";
+    if (location.pathname.includes(path.to.jobStaging(jobId))) return "staging";
     return "details";
   };
 
@@ -291,14 +294,18 @@ const JobHeader = () => {
                   </DropdownMenuRadioItem>
                 ))}
                 <DropdownMenuSeparator />
-                {["events", "quantities", "step-records", "picking-lists"].map(
-                  (i) => (
-                    <DropdownMenuRadioItem value={i} key={i}>
-                      <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
-                      {getExplorerLabel(i)}
-                    </DropdownMenuRadioItem>
-                  )
-                )}
+                {[
+                  "events",
+                  "quantities",
+                  "step-records",
+                  "picking-lists",
+                  "staging"
+                ].map((i) => (
+                  <DropdownMenuRadioItem value={i} key={i}>
+                    <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
+                    {getExplorerLabel(i)}
+                  </DropdownMenuRadioItem>
+                ))}
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -470,6 +477,8 @@ function getExplorerMenuIcon(type: string) {
       return <LuSquareSigma />;
     case "picking-lists":
       return <LuClipboardList />;
+    case "staging":
+      return <LuPackage />;
     default:
       return <LuCirclePlay />;
   }
@@ -489,6 +498,8 @@ const getExplorePath = (jobId: string, type: string) => {
       return path.to.jobProductionQuantities(jobId);
     case "picking-lists":
       return path.to.jobPickingLists(jobId);
+    case "staging":
+      return path.to.jobStaging(jobId);
     default:
       return path.to.jobDetails(jobId);
   }
