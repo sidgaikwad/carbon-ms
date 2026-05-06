@@ -1,0 +1,48 @@
+import { assertIsPost, error, success } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
+import type { ActionFunctionArgs } from "react-router";
+import { data, redirect } from "react-router";
+import { path } from "~/utils/path";
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "inventory"
+  });
+
+  const { id } = params;
+  if (!id) throw new Error("id not found");
+
+  const formData = await request.formData();
+  const shortageReason =
+    (formData.get("shortageReason") as string) || undefined;
+
+  const { error: fnError } = await client.functions.invoke("pick", {
+    body: JSON.stringify({
+      type: "confirmPickingList",
+      pickingListId: id,
+      shortageReason,
+      companyId,
+      userId
+    })
+  });
+
+  if (fnError) {
+    return data(
+      { success: false },
+      await flash(
+        request,
+        error(fnError.message, "Failed to confirm picking list")
+      )
+    );
+  }
+
+  throw redirect(
+    path.to.pickingList(id),
+    await flash(
+      request,
+      success("Picking list confirmed and consumption posted")
+    )
+  );
+}

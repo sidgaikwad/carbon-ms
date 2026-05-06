@@ -80,7 +80,7 @@ export const getSupabase = (authorizationHeader: string | null) => {
     Deno.env.get("SUPABASE_ANON_KEY") ?? "",
     {
       global: {
-        headers: { authorizationHeader },
+        headers: { Authorization: authorizationHeader },
       },
       auth: {
         autoRefreshToken: false,

@@ -2010,3 +2010,109 @@ export async function getTrackedEntityExpirations(
     {}
   );
 }
+
+// ─── Picking Lists ────────────────────────────────────────────
+
+export async function getPickingLists(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    locationId?: string;
+    status?: string[];
+    assignee?: string;
+    jobId?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  } = {}
+) {
+  let query = client
+    .from("pickingList")
+    .select(
+      `id, pickingListId, jobId, locationId, status, assignee, dueDate,
+       confirmedAt, confirmedBy, companyId, createdAt, updatedAt,
+       job:jobId(jobId, itemId, item:itemId(name, readableId)),
+       location:locationId(name),
+       assigneeUser:assignee(id, fullName, avatarUrl)`,
+      { count: "exact" }
+    )
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+
+  if (args.locationId) query = query.eq("locationId", args.locationId);
+  if (args.assignee) query = query.eq("assignee", args.assignee);
+  if (args.jobId) query = query.eq("jobId", args.jobId);
+  if (args.status?.length) query = query.in("status", args.status);
+  if (args.search) query = query.ilike("pickingListId", `%${args.search}%`);
+  if (args.limit) query = query.limit(args.limit);
+  if (args.offset)
+    query = query.range(args.offset, args.offset + (args.limit ?? 20) - 1);
+
+  return query;
+}
+
+export async function getPickingList(
+  client: SupabaseClient<Database>,
+  pickingListId: string
+) {
+  return client
+    .from("pickingList")
+    .select(
+      `*, job:jobId(jobId, itemId, item:itemId(name, readableId)),
+       location:locationId(name),
+       assigneeUser:assignee(id, fullName, avatarUrl),
+       destinationStorageUnit:destinationStorageUnitId(id, name)`
+    )
+    .eq("id", pickingListId)
+    .single();
+}
+
+export async function getPickingListLines(
+  client: SupabaseClient<Database>,
+  pickingListId: string
+) {
+  return client
+    .from("pickingListLine")
+    .select(
+      `*, item:itemId(id, name, readableId, unitOfMeasureCode, itemTrackingType, thumbnailPath),
+       storageUnit:storageUnitId(id, name),
+       destinationStorageUnit:destinationStorageUnitId(id, name),
+       jobMaterial:jobMaterialId(id, estimatedQuantity, quantityIssued)`
+    )
+    .eq("pickingListId", pickingListId)
+    .order("createdAt", { ascending: true });
+}
+
+export async function deletePickingList(
+  client: SupabaseClient<Database>,
+  pickingListId: string
+) {
+  return client.from("pickingList").delete().eq("id", pickingListId);
+}
+
+export async function upsertPickingList(
+  client: SupabaseClient<Database>,
+  values: {
+    id?: string;
+    jobId: string;
+    locationId: string;
+    destinationStorageUnitId?: string | null;
+    assignee?: string | null;
+    dueDate?: string | null;
+    notes?: object;
+    companyId: string;
+    createdBy: string;
+    updatedBy?: string;
+  }
+) {
+  const { id, ...rest } = values;
+  if (id) {
+    return client
+      .from("pickingList")
+      .update({ ...rest, updatedAt: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+  }
+  return client.from("pickingList").insert(rest).select().single();
+}

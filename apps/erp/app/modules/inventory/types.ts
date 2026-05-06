@@ -4,6 +4,9 @@ import type {
   getInventoryItems,
   getItemLedgerPage,
   getKanbans,
+  getPickingList,
+  getPickingListLines,
+  getPickingLists,
   getReceiptLines,
   getReceipts,
   getReceiptTracking,
@@ -93,6 +96,18 @@ export type WarehouseTransfer = NonNullable<
 
 export type WarehouseTransferLine = NonNullable<
   Awaited<ReturnType<typeof getWarehouseTransferLines>>["data"]
+>[number];
+
+export type PickingList = NonNullable<
+  Awaited<ReturnType<typeof getPickingLists>>["data"]
+>[number];
+
+export type PickingListDetail = NonNullable<
+  Awaited<ReturnType<typeof getPickingList>>["data"]
+>;
+
+export type PickingListLine = NonNullable<
+  Awaited<ReturnType<typeof getPickingListLines>>["data"]
 >[number];
 
 export interface Activity {

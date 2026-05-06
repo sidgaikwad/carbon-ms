@@ -1246,6 +1246,25 @@ export const path = {
     stockTransferStatus: (id: string) =>
       generatePath(`${x}/stock-transfer/${id}/status`),
     stockTransfers: `${x}/inventory/stock-transfers`,
+    pickingList: (id: string) => generatePath(`${x}/picking-list/${id}`),
+    pickingListStatus: (id: string) =>
+      generatePath(`${x}/picking-list/${id}/status`),
+    pickingListConfirm: (id: string) =>
+      generatePath(`${x}/picking-list/${id}/confirm`),
+    confirmPickingList: (id: string) =>
+      generatePath(`${x}/picking-list/${id}/confirm`),
+    regeneratePickingList: (id: string) =>
+      generatePath(`${x}/picking-list/${id}/regenerate`),
+    pickingListLineQuantity: (id: string) =>
+      generatePath(`${x}/picking-list/${id}/line/quantity`),
+    pickingListScan: (id: string, lineId: string) =>
+      generatePath(`${x}/picking-list/${id}/scan/${lineId}`),
+    unpickPickingListLine: (id: string, lineId: string) =>
+      generatePath(`${x}/picking-list/${id}/unpick/${lineId}`),
+    deletePickingList: (id: string) =>
+      generatePath(`${x}/picking-list/delete/${id}`),
+    newPickingList: `${x}/inventory/picking-lists/new`,
+    pickingLists: `${x}/inventory/picking-lists`,
     suggestion: (id: string) =>
       generatePath(`${x}/resources/suggestions/${id}`),
     suggestions: `${x}/resources/suggestions`,

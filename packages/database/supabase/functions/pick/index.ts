@@ -2,14 +2,75 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
-
+import { getSupabase, getSupabaseServiceRole } from "../lib/supabase.ts";
 import { corsHeaders } from "../lib/headers.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
+// ─── Payload schemas ──────────────────────────────────────────
+
 const payloadValidator = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("generatePickingList"),
+    jobId: z.string(),
+    locationId: z.string(),
+    destinationStorageUnitId: z.string().optional(),
+    dueDate: z.string().optional(),
+    assignee: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("regeneratePickingList"),
+    pickingListId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("pickInventoryLine"),
+    pickingListId: z.string(),
+    pickingListLineId: z.string(),
+    pickedQuantity: z.number().min(0),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("pickTrackedEntityLine"),
+    pickingListId: z.string(),
+    pickingListLineId: z.string(),
+    trackedEntityId: z.string(),
+    pickedQuantity: z.number().positive(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("unpickLine"),
+    pickingListId: z.string(),
+    pickingListLineId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("releasePickingList"),
+    pickingListId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("confirmPickingList"),
+    pickingListId: z.string(),
+    shortageReason: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("cancelPickingList"),
+    pickingListId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  // Legacy stubs (P1 — not yet implemented)
   z.object({
     type: z.literal("stageJob"),
     jobId: z.string(),
@@ -23,67 +84,467 @@ const payloadValidator = z.discriminatedUnion("type", [
     companyId: z.string(),
     userId: z.string(),
   }),
-  z.object({
-    type: z.literal("executePick"),
-    stockTransferLineId: z.string(),
-    pickedQuantity: z.number(),
-    companyId: z.string(),
-    userId: z.string(),
-  }),
-  z.object({
-    type: z.literal("completeStockTransfer"),
-    stockTransferId: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
-  }),
 ]);
+
+// ─── Helpers ──────────────────────────────────────────────────
+
+async function getNextPickingListId(
+  client: any,
+  companyId: string,
+): Promise<string> {
+  const { data, error } = await client
+    .from("sequence")
+    .select("prefix, next, size")
+    .eq("table", "pickingList")
+    .eq("companyId", companyId)
+    .single();
+
+  if (error || !data) throw new Error("Could not get picking list sequence");
+
+  const readable = `${data.prefix ?? ""}${String(data.next).padStart(data.size, "0")}`;
+
+  await client
+    .from("sequence")
+    .update({ next: data.next + 1 })
+    .eq("table", "pickingList")
+    .eq("companyId", companyId);
+
+  return readable;
+}
+
+// ─── Operations ───────────────────────────────────────────────
+
+async function generatePickingList(client: any, payload: any) {
+  const { jobId, locationId, destinationStorageUnitId, dueDate, assignee, companyId, userId } = payload;
+
+  const { data: settings } = await client
+    .from("companySettings")
+    .select("usePickingLists")
+    .eq("id", companyId)
+    .single();
+
+  if (settings?.usePickingLists === false) {
+    throw new Error("Picking lists are disabled for this company");
+  }
+
+  const pickingListId = await getNextPickingListId(client, companyId);
+
+  const { data: pl, error: plError } = await client
+    .from("pickingList")
+    .insert({
+      pickingListId,
+      jobId,
+      locationId,
+      destinationStorageUnitId: destinationStorageUnitId ?? null,
+      dueDate: dueDate ?? null,
+      assignee: assignee ?? null,
+      status: "Draft",
+      companyId,
+      createdBy: userId,
+    })
+    .select()
+    .single();
+
+  if (plError || !pl) throw new Error(plError?.message ?? "Failed to create picking list");
+
+  const { error: rpcError } = await client.rpc("generate_picking_list_lines", {
+    p_picking_list_id: pl.id,
+    p_job_id: jobId,
+    p_company_id: companyId,
+    p_user_id: userId,
+  });
+
+  if (rpcError) throw new Error(rpcError.message ?? "Failed to generate picking list lines");
+
+  return pl;
+}
+
+async function regeneratePickingList(client: any, payload: any) {
+  const { pickingListId, companyId, userId } = payload;
+
+  const { data: pl } = await client
+    .from("pickingList")
+    .select("*, pickingListLine(*)")
+    .eq("id", pickingListId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (!pl) throw new Error("Picking list not found");
+  if (["Confirmed", "Cancelled"].includes(pl.status)) {
+    throw new Error(`Cannot regenerate a ${pl.status} picking list`);
+  }
+
+  const hasAnyPick = (pl.pickingListLine ?? []).some((l: any) => l.pickedQuantity > 0);
+  if (pl.status === "In Progress" && hasAnyPick) {
+    throw new Error("Cannot regenerate: lines have been picked. Confirm or cancel first.");
+  }
+
+  const { error: rpcError } = await client.rpc("generate_picking_list_lines", {
+    p_picking_list_id: pickingListId,
+    p_job_id: pl.jobId,
+    p_company_id: companyId,
+    p_user_id: userId,
+  });
+
+  if (rpcError) throw new Error(rpcError.message ?? "Failed to regenerate lines");
+
+  return { success: true };
+}
+
+async function pickInventoryLine(client: any, payload: any) {
+  const { pickingListId, pickingListLineId, pickedQuantity, companyId, userId } = payload;
+
+  const { data: pl } = await client
+    .from("pickingList")
+    .select("status")
+    .eq("id", pickingListId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (!pl || !["Released", "In Progress"].includes(pl.status)) {
+    throw new Error("Picking list must be Released or In Progress to pick lines");
+  }
+
+  const { error: lineError } = await client
+    .from("pickingListLine")
+    .update({ pickedQuantity, updatedBy: userId, updatedAt: new Date().toISOString() })
+    .eq("id", pickingListLineId)
+    .eq("companyId", companyId);
+
+  if (lineError) throw new Error(lineError.message);
+
+  if (pl.status === "Released") {
+    await client
+      .from("pickingList")
+      .update({ status: "In Progress", updatedBy: userId, updatedAt: new Date().toISOString() })
+      .eq("id", pickingListId)
+      .eq("companyId", companyId);
+  }
+
+  return { success: true };
+}
+
+async function pickTrackedEntityLine(client: any, payload: any) {
+  const { pickingListId, pickingListLineId, trackedEntityId, pickedQuantity, companyId, userId } = payload;
+
+  const { data: pl } = await client
+    .from("pickingList")
+    .select("status")
+    .eq("id", pickingListId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (!pl || !["Released", "In Progress"].includes(pl.status)) {
+    throw new Error("Picking list must be Released or In Progress to pick lines");
+  }
+
+  const { data: entity } = await client
+    .from("trackedEntity")
+    .select("*")
+    .eq("id", trackedEntityId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (!entity) throw new Error("Tracked entity not found");
+  if (entity.status !== "Available") throw new Error(`Entity is ${entity.status}`);
+
+  const { data: line } = await client
+    .from("pickingListLine")
+    .select("*")
+    .eq("id", pickingListLineId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (!line) throw new Error("Picking list line not found");
+
+  if (entity.sourceDocumentId !== line.itemId) {
+    throw new Error("Scanned entity belongs to a different item");
+  }
+
+  if (entity.unitOfMeasureCode && line.unitOfMeasureCode &&
+      entity.unitOfMeasureCode !== line.unitOfMeasureCode) {
+    throw new Error(`UoM mismatch: entity is ${entity.unitOfMeasureCode}, line expects ${line.unitOfMeasureCode}`);
+  }
+
+  const { error: lineError } = await client
+    .from("pickingListLine")
+    .update({
+      pickedTrackedEntityId: trackedEntityId,
+      pickedQuantity,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("id", pickingListLineId)
+    .eq("companyId", companyId);
+
+  if (lineError) throw new Error(lineError.message);
+
+  if (pl.status === "Released") {
+    await client
+      .from("pickingList")
+      .update({ status: "In Progress", updatedBy: userId, updatedAt: new Date().toISOString() })
+      .eq("id", pickingListId)
+      .eq("companyId", companyId);
+  }
+
+  return { success: true };
+}
+
+async function unpickLine(client: any, payload: any) {
+  const { pickingListId, pickingListLineId, companyId, userId } = payload;
+
+  const { data: pl } = await client
+    .from("pickingList")
+    .select("status")
+    .eq("id", pickingListId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (!pl || pl.status !== "In Progress") {
+    throw new Error("Can only unpick lines on an In Progress picking list");
+  }
+
+  await client
+    .from("pickingListLine")
+    .update({
+      pickedQuantity: 0,
+      pickedTrackedEntityId: null,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("id", pickingListLineId)
+    .eq("companyId", companyId);
+
+  return { success: true };
+}
+
+async function releasePickingList(client: any, payload: any) {
+  const { pickingListId, companyId, userId } = payload;
+
+  const { data: pl } = await client
+    .from("pickingList")
+    .select("status")
+    .eq("id", pickingListId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (!pl) throw new Error("Picking list not found");
+  if (pl.status !== "Draft") throw new Error("Only Draft picking lists can be released");
+
+  await client
+    .from("pickingList")
+    .update({ status: "Released", updatedBy: userId, updatedAt: new Date().toISOString() })
+    .eq("id", pickingListId)
+    .eq("companyId", companyId);
+
+  return { success: true };
+}
+
+async function confirmPickingList(client: any, payload: any) {
+  const { pickingListId, shortageReason, companyId, userId } = payload;
+  const now = new Date().toISOString();
+
+  const { data: pl } = await client
+    .from("pickingList")
+    .select("*, pickingListLine(*)")
+    .eq("id", pickingListId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (!pl) throw new Error("Picking list not found");
+  if (!["Released", "In Progress"].includes(pl.status)) {
+    throw new Error(`Cannot confirm a ${pl.status} picking list`);
+  }
+
+  const lines: any[] = pl.pickingListLine ?? [];
+  const hasOutstanding = lines.some((l: any) => l.outstandingQuantity > 0);
+  if (hasOutstanding && !shortageReason) {
+    throw new Error("A shortage reason is required when confirming with outstanding quantities");
+  }
+
+  const ledgerEntries: any[] = [];
+  const jobMaterialUpdates: Array<{ id: string; pickedQty: number }> = [];
+  const entityConsumes: string[] = [];
+
+  for (const line of lines) {
+    if (line.pickedQuantity <= 0) continue;
+
+    ledgerEntries.push({
+      entryType: "Consumption",
+      documentType: "Job Consumption",
+      documentId: pl.jobId,
+      documentLineId: line.jobMaterialId,
+      itemId: line.itemId,
+      quantity: -line.pickedQuantity,
+      trackedEntityId: line.pickedTrackedEntityId ?? null,
+      locationId: pl.locationId,
+      companyId,
+      createdBy: userId,
+    });
+
+    jobMaterialUpdates.push({ id: line.jobMaterialId, pickedQty: line.pickedQuantity });
+
+    if (line.pickedTrackedEntityId) {
+      entityConsumes.push(line.pickedTrackedEntityId);
+    }
+  }
+
+  if (ledgerEntries.length > 0) {
+    const { error: ledgerError } = await client.from("itemLedger").insert(ledgerEntries);
+    if (ledgerError) throw new Error(ledgerError.message ?? "Failed to post ledger entries");
+  }
+
+  for (const { id, pickedQty } of jobMaterialUpdates) {
+    const { data: jm } = await client
+      .from("jobMaterial")
+      .select("quantityIssued")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .single();
+
+    if (jm) {
+      await client
+        .from("jobMaterial")
+        .update({ quantityIssued: (jm.quantityIssued ?? 0) + pickedQty })
+        .eq("id", id)
+        .eq("companyId", companyId);
+    }
+  }
+
+  if (entityConsumes.length > 0) {
+    await client
+      .from("trackedEntity")
+      .update({ status: "Consumed" })
+      .in("id", entityConsumes)
+      .eq("companyId", companyId);
+
+    const { data: activity } = await client
+      .from("trackedActivity")
+      .insert({
+        type: "Consume",
+        sourceDocument: "Picking List",
+        sourceDocumentId: pickingListId,
+        sourceDocumentReadableId: pl.pickingListId,
+        companyId,
+        createdBy: userId,
+      })
+      .select()
+      .single();
+
+    if (activity) {
+      const inputs = entityConsumes.map((eid) => ({
+        trackedActivityId: activity.id,
+        trackedEntityId: eid,
+        quantity: lines.find((l: any) => l.pickedTrackedEntityId === eid)?.pickedQuantity ?? 0,
+        companyId,
+        createdBy: userId,
+      }));
+      await client.from("trackedActivityInput").insert(inputs);
+    }
+  }
+
+  const { error: plError } = await client
+    .from("pickingList")
+    .update({
+      status: "Confirmed",
+      confirmedAt: now,
+      confirmedBy: userId,
+      shortageReason: shortageReason ?? null,
+      updatedBy: userId,
+      updatedAt: now,
+    })
+    .eq("id", pickingListId)
+    .eq("companyId", companyId);
+
+  if (plError) throw new Error(plError.message ?? "Failed to confirm picking list");
+
+  return { success: true };
+}
+
+async function cancelPickingList(client: any, payload: any) {
+  const { pickingListId, companyId, userId } = payload;
+
+  const { data: pl } = await client
+    .from("pickingList")
+    .select("status")
+    .eq("id", pickingListId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (!pl) throw new Error("Picking list not found");
+  if (pl.status === "Confirmed") {
+    throw new Error("Cannot cancel a Confirmed picking list");
+  }
+
+  await client
+    .from("pickingList")
+    .update({ status: "Cancelled", updatedBy: userId, updatedAt: new Date().toISOString() })
+    .eq("id", pickingListId)
+    .eq("companyId", companyId);
+
+  return { success: true };
+}
+
+// ─── Server ───────────────────────────────────────────────────
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
   const payload = await req.json();
 
   try {
-    const { type, companyId, userId } = payloadValidator.parse(payload);
+    const validated = payloadValidator.parse(payload);
+    const { type, companyId, userId } = validated;
 
-    console.log({
-      function: "pick",
-      type,
-      companyId,
-      userId,
-    });
+    console.log({ function: "pick", type, companyId, userId });
 
-    const client = await getSupabaseServiceRole(
-      req.headers.get("Authorization"),
-      req.headers.get("carbon-key") ?? "",
-      companyId
-    );
+    const authorizationHeader = req.headers.get("Authorization");
+    const apiKeyHeader = req.headers.get("carbon-key");
+    const client =
+      apiKeyHeader && companyId
+        ? await getSupabaseServiceRole(
+            authorizationHeader,
+            apiKeyHeader,
+            companyId,
+          )
+        : getSupabase(authorizationHeader);
 
     switch (type) {
+      case "generatePickingList":
+        return Response.json(await generatePickingList(client, validated), { headers: corsHeaders });
+      case "regeneratePickingList":
+        return Response.json(await regeneratePickingList(client, validated), { headers: corsHeaders });
+      case "pickInventoryLine":
+        return Response.json(await pickInventoryLine(client, validated), { headers: corsHeaders });
+      case "pickTrackedEntityLine":
+        return Response.json(await pickTrackedEntityLine(client, validated), { headers: corsHeaders });
+      case "unpickLine":
+        return Response.json(await unpickLine(client, validated), { headers: corsHeaders });
+      case "releasePickingList":
+        return Response.json(await releasePickingList(client, validated), { headers: corsHeaders });
+      case "confirmPickingList":
+        return Response.json(await confirmPickingList(client, validated), { headers: corsHeaders });
+      case "cancelPickingList":
+        return Response.json(await cancelPickingList(client, validated), { headers: corsHeaders });
       case "stageJob":
       case "generateStockTransfer":
-      case "executePick":
-      case "completeStockTransfer":
+        return new Response(
+          JSON.stringify({ error: "Not yet implemented (P1)" }),
+          { status: 501, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
       default:
         return new Response(
           JSON.stringify({ error: "Invalid operation type" }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
     }
   } catch (error) {
     console.error("Error in pick:", error);
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error",
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
