@@ -172,7 +172,9 @@ function CompanyBreadcrumb() {
     >();
 
     for (const c of routeData.companies) {
-      const groupName = c.companyGroupName ?? "Companies";
+      const groupName =
+        (c as { companyGroupName?: string | null }).companyGroupName ??
+        "Companies";
       const existing = groups.get(groupName);
       if (existing) {
         existing.companies.push(c);
