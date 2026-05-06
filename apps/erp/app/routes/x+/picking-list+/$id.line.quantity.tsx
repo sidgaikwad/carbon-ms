@@ -36,10 +36,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (fnError) {
-    return data(
-      { success: false },
-      await flash(request, error(fnError.message, "Failed to pick line"))
-    );
+    let message = "Failed to pick line";
+    try {
+      const body = await (fnError as any).context?.json?.();
+      if (body?.error) message = body.error;
+    } catch {
+      // Best effort parse of edge-function error payload.
+    }
+    return data({ success: false }, await flash(request, error(null, message)));
   }
 
   return data(

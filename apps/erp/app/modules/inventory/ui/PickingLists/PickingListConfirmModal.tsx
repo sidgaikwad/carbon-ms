@@ -16,8 +16,9 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuCircleCheck, LuTriangleAlert } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { useFetcher, useNavigate } from "react-router";
 import type { PickingListLine } from "~/modules/inventory";
+import { path } from "~/utils/path";
 
 interface PickingListConfirmModalProps {
   pickingListId: string;
@@ -31,15 +32,19 @@ export default function PickingListConfirmModal({
   onClose
 }: PickingListConfirmModalProps) {
   const { t } = useLingui();
+  const navigate = useNavigate();
   const [shortageReason, setShortageReason] = useState("");
   const [backendError, setBackendError] = useState<string | null>(null);
   const fetcher = useFetcher<{ success: boolean; message?: string }>();
 
   useEffect(() => {
-    if (fetcher.data?.success === false) {
+    if (fetcher.data?.success === true) {
+      onClose();
+      navigate(path.to.pickingList(pickingListId));
+    } else if (fetcher.data?.success === false) {
       setBackendError(fetcher.data.message ?? "Failed to confirm picking list");
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, onClose, navigate, pickingListId]);
 
   const hasOutstanding = lines.some((l) => (l.outstandingQuantity ?? 0) > 0);
   const pickedLines = lines.filter((l) => (l.pickedQuantity ?? 0) > 0);

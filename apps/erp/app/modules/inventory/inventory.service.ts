@@ -2071,16 +2071,73 @@ export async function getPickingListLines(
   client: SupabaseClient<Database>,
   pickingListId: string
 ) {
-  return client
+  const { data: lines, error } = await client
     .from("pickingListLine")
-    .select(
-      `*, item:itemId(id, name, readableId, unitOfMeasureCode, itemTrackingType, thumbnailPath),
-       storageUnit:storageUnitId(id, name),
-       destinationStorageUnit:destinationStorageUnitId(id, name),
-       jobMaterial:jobMaterialId(id, estimatedQuantity, quantityIssued)`
-    )
+    .select("*")
     .eq("pickingListId", pickingListId)
     .order("createdAt", { ascending: true });
+
+  if (error || !lines) return { data: null, error };
+
+  const itemIds = [...new Set(lines.map((l) => l.itemId).filter(Boolean))];
+  const storageUnitIds = [
+    ...new Set(
+      lines
+        .flatMap((l) => [l.storageUnitId, l.destinationStorageUnitId])
+        .filter(Boolean)
+    )
+  ];
+  const jobMaterialIds = [
+    ...new Set(lines.map((l) => l.jobMaterialId).filter(Boolean))
+  ];
+
+  const [itemsRes, storageUnitsRes, jobMaterialsRes] = await Promise.all([
+    itemIds.length
+      ? client
+          .from("item")
+          .select(
+            "id, name, readableId, unitOfMeasureCode, itemTrackingType, thumbnailPath"
+          )
+          .in("id", itemIds)
+      : Promise.resolve({ data: [], error: null } as const),
+    storageUnitIds.length
+      ? client.from("storageUnit").select("id, name").in("id", storageUnitIds)
+      : Promise.resolve({ data: [], error: null } as const),
+    jobMaterialIds.length
+      ? client
+          .from("jobMaterial")
+          .select("id, estimatedQuantity, quantityIssued")
+          .in("id", jobMaterialIds)
+      : Promise.resolve({ data: [], error: null } as const)
+  ]);
+
+  const joinError =
+    itemsRes.error ?? storageUnitsRes.error ?? jobMaterialsRes.error;
+  if (joinError) return { data: null, error: joinError };
+
+  const itemById = new Map((itemsRes.data ?? []).map((row) => [row.id, row]));
+  const suById = new Map(
+    (storageUnitsRes.data ?? []).map((row) => [row.id, row])
+  );
+  const jmById = new Map(
+    (jobMaterialsRes.data ?? []).map((row) => [row.id, row])
+  );
+
+  const merged = lines.map((line) => ({
+    ...line,
+    item: line.itemId ? (itemById.get(line.itemId) ?? null) : null,
+    storageUnit: line.storageUnitId
+      ? (suById.get(line.storageUnitId) ?? null)
+      : null,
+    destinationStorageUnit: line.destinationStorageUnitId
+      ? (suById.get(line.destinationStorageUnitId) ?? null)
+      : null,
+    jobMaterial: line.jobMaterialId
+      ? (jmById.get(line.jobMaterialId) ?? null)
+      : null
+  }));
+
+  return { data: merged, error: null };
 }
 
 export async function deletePickingList(
@@ -2088,6 +2145,72 @@ export async function deletePickingList(
   pickingListId: string
 ) {
   return client.from("pickingList").delete().eq("id", pickingListId);
+}
+
+export async function getActiveAllocations(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemIds: string[],
+  excludePickingListId?: string
+) {
+  if (itemIds.length === 0)
+    return {
+      data: [] as Array<{ itemId: string; allocatedQuantity: number }>,
+      error: null
+    };
+
+  // Step 1: get IDs of all active PLs for this company (excluding the current PL if viewing it)
+  let plQuery = client
+    .from("pickingList")
+    .select("id")
+    .eq("companyId", companyId)
+    .in("status", ["Released", "In Progress"]);
+
+  if (excludePickingListId) {
+    plQuery = plQuery.neq("id", excludePickingListId);
+  }
+
+  const { data: activePls, error: plError } = await plQuery;
+
+  if (plError || !activePls?.length) {
+    return {
+      data: [] as Array<{ itemId: string; allocatedQuantity: number }>,
+      error: plError ?? null
+    };
+  }
+
+  const activePlIds = activePls.map((pl) => pl.id);
+
+  // Step 2: sum outstanding qty per item across those PLs
+  const { data, error } = await client
+    .from("pickingListLine")
+    .select("itemId, outstandingQuantity")
+    .eq("companyId", companyId)
+    .in("itemId", itemIds)
+    .in("pickingListId", activePlIds);
+
+  if (error)
+    return {
+      data: [] as Array<{ itemId: string; allocatedQuantity: number }>,
+      error
+    };
+
+  const totals = (data ?? []).reduce<Record<string, number>>((acc, row) => {
+    const qty = (row as any).outstandingQuantity ?? 0;
+    if (qty > 0) {
+      acc[row.itemId as string] =
+        (acc[row.itemId as string] ?? 0) + Number(qty);
+    }
+    return acc;
+  }, {});
+
+  return {
+    data: Object.entries(totals).map(([itemId, allocatedQuantity]) => ({
+      itemId,
+      allocatedQuantity
+    })),
+    error: null
+  };
 }
 
 export async function upsertPickingList(

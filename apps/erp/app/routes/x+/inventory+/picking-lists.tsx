@@ -6,6 +6,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { getPickingLists, PickingListsTable } from "~/modules/inventory";
+import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -25,8 +26,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const statusFilter = searchParams.getAll("status");
-  const { limit, offset } = getGenericQueryFilters(searchParams);
+  const { limit, offset, filters } = getGenericQueryFilters(searchParams);
+
+  // Status comes from standard ?filter=status:eq:Draft params
+  const statusFilter = (filters ?? [])
+    .filter((f) => f.column === "status")
+    .flatMap((f) => f.value.split(","));
 
   let locationId = searchParams.get("location");
 
@@ -35,13 +40,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = userDefaults.data?.locationId ?? null;
   }
 
-  const pickingLists = await getPickingLists(client, companyId, {
-    locationId: locationId ?? undefined,
-    status: statusFilter.length ? statusFilter : undefined,
-    search: search ?? undefined,
-    limit,
-    offset
-  });
+  const [pickingLists, locationsList] = await Promise.all([
+    getPickingLists(client, companyId, {
+      locationId: locationId ?? undefined,
+      status: statusFilter.length ? statusFilter : undefined,
+      search: search ?? undefined,
+      limit,
+      offset
+    }),
+    getLocationsList(client, companyId)
+  ]);
 
   if (pickingLists.error) {
     throw redirect(
@@ -53,19 +61,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     pickingLists: pickingLists.data ?? [],
     count: pickingLists.count ?? 0,
-    locationId
+    locationId,
+    locations: locationsList.data ?? []
   };
 }
 
 export default function PickingListsRoute() {
-  const { pickingLists, count, locationId } = useLoaderData<typeof loader>();
+  const { pickingLists, count, locationId, locations } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <PickingListsTable
         data={pickingLists}
         count={count}
-        locationId={locationId ?? undefined}
+        locationId={locationId}
+        locations={locations}
       />
       <Outlet />
     </VStack>

@@ -1,5 +1,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -21,16 +22,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "inventory"
   });
+
+  const serviceRole = await getCarbonServiceRole();
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [pickingList, pickingListLines] = await Promise.all([
-    getPickingList(client, id),
-    getPickingListLines(client, id)
+    getPickingList(serviceRole, id),
+    getPickingListLines(serviceRole, id)
   ]);
 
   if (pickingList.error) {
@@ -45,6 +48,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (pickingList.data.companyId !== companyId) {
     throw redirect(path.to.pickingLists);
+  }
+
+  if (pickingListLines.error) {
+    throw redirect(
+      path.to.pickingLists,
+      await flash(
+        request,
+        error(pickingListLines.error, "Failed to load picking list lines")
+      )
+    );
   }
 
   return {

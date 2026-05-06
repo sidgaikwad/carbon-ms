@@ -10,18 +10,21 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  useMount,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
   redirect,
   useActionData,
+  useFetcher,
   useNavigate,
   useNavigation
 } from "react-router";
-import { DatePicker, Input } from "~/components/Form";
+import { Combobox, DatePicker, Input } from "~/components/Form";
 import { pickingListValidator } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
@@ -48,9 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!jobId || !locationId) {
     return data(
-      {
-        formError: "Job and location are required"
-      },
+      { formError: "Job and location are required" },
       await flash(request, error(null, "Job and location are required"))
     );
   }
@@ -116,9 +117,7 @@ export async function action({ request }: ActionFunctionArgs) {
       "Failed to create picking list";
 
     return data(
-      {
-        formError: message
-      },
+      { formError: message },
       await flash(request, error(message, "Failed to create picking list"))
     );
   }
@@ -129,6 +128,26 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 }
 
+function useJobOptions() {
+  const fetcher = useFetcher<{ data: Array<{ id: string; jobId: string }> }>();
+  useMount(() => fetcher.load(path.to.api.inventoryJobs));
+  return useMemo(
+    () =>
+      (fetcher.data?.data ?? []).map((j) => ({ value: j.id, label: j.jobId })),
+    [fetcher.data]
+  );
+}
+
+function useLocationOptions() {
+  const fetcher = useFetcher<{ data: Array<{ id: string; name: string }> }>();
+  useMount(() => fetcher.load(path.to.api.locations));
+  return useMemo(
+    () =>
+      (fetcher.data?.data ?? []).map((l) => ({ value: l.id, label: l.name })),
+    [fetcher.data]
+  );
+}
+
 export default function NewPickingListRoute() {
   const { t } = useLingui();
   const actionData = useActionData<typeof action>();
@@ -136,6 +155,9 @@ export default function NewPickingListRoute() {
   const navigate = useNavigate();
   const onClose = () => navigate(path.to.pickingLists);
   const isSubmitting = navigation.state === "submitting";
+
+  const jobOptions = useJobOptions();
+  const locationOptions = useLocationOptions();
 
   return (
     <Drawer open onOpenChange={(open) => !open && onClose()}>
@@ -163,34 +185,22 @@ export default function NewPickingListRoute() {
                 <p className="text-sm text-red-500">{actionData.formError}</p>
               ) : null}
 
-              <VStack spacing={2}>
-                <Input
-                  name="jobId"
-                  label={t`Job ID`}
-                  placeholder="Paste internal job id (xid)"
-                />
-              </VStack>
+              <Combobox name="jobId" label={t`Job`} options={jobOptions} />
 
-              <VStack spacing={2}>
-                <Input
-                  name="locationId"
-                  label={t`Location ID`}
-                  placeholder="Paste internal location id (xid)"
-                />
-              </VStack>
+              <Combobox
+                name="locationId"
+                label={t`Location`}
+                options={locationOptions}
+              />
 
-              <VStack spacing={2}>
-                <DatePicker name="dueDate" label={t`Due Date`} isOptional />
-              </VStack>
+              <DatePicker name="dueDate" label={t`Due Date`} isOptional />
 
-              <VStack spacing={2}>
-                <Input
-                  name="destinationStorageUnitId"
-                  label={t`Destination Storage Unit ID`}
-                  isOptional
-                  placeholder="Paste storage unit id (xid)"
-                />
-              </VStack>
+              <Input
+                name="destinationStorageUnitId"
+                label={t`Destination Storage Unit ID`}
+                isOptional
+                placeholder="Paste storage unit id (xid)"
+              />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

@@ -70,6 +70,12 @@ const payloadValidator = z.discriminatedUnion("type", [
     companyId: z.string(),
     userId: z.string(),
   }),
+  z.object({
+    type: z.literal("reversePickingList"),
+    pickingListId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
   // Legacy stubs (P1 — not yet implemented)
   z.object({
     type: z.literal("stageJob"),
@@ -205,6 +211,23 @@ async function pickInventoryLine(client: any, payload: any) {
     throw new Error("Picking list must be Released or In Progress to pick lines");
   }
 
+  // Over-pick guard: hard block at 2x estimated/adjusted qty
+  const { data: lineCheck } = await client
+    .from("pickingListLine")
+    .select("estimatedQuantity, adjustedQuantity")
+    .eq("id", pickingListLineId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (lineCheck) {
+    const effectiveQty = (lineCheck.adjustedQuantity ?? lineCheck.estimatedQuantity) as number;
+    if (pickedQuantity > effectiveQty * 2) {
+      throw new Error(
+        `Cannot pick more than 2× the required quantity. Maximum allowed: ${effectiveQty * 2}`
+      );
+    }
+  }
+
   const { error: lineError } = await client
     .from("pickingListLine")
     .update({ pickedQuantity, updatedBy: userId, updatedAt: new Date().toISOString() })
@@ -241,9 +264,9 @@ async function pickTrackedEntityLine(client: any, payload: any) {
   const { data: entity } = await client
     .from("trackedEntity")
     .select("*")
-    .eq("id", trackedEntityId)
+    .or(`id.eq.${trackedEntityId},readableId.eq.${trackedEntityId}`)
     .eq("companyId", companyId)
-    .single();
+    .maybeSingle();
 
   if (!entity) throw new Error("Tracked entity not found");
   if (entity.status !== "Available") throw new Error(`Entity is ${entity.status}`);
@@ -266,11 +289,56 @@ async function pickTrackedEntityLine(client: any, payload: any) {
     throw new Error(`UoM mismatch: entity is ${entity.unitOfMeasureCode}, line expects ${line.unitOfMeasureCode}`);
   }
 
+  // Prevent duplicate use of the same tracked entity on multiple lines of the same PL.
+  // Re-scan on the same line is allowed (excluded by line id).
+  const duplicateEntityIds = [entity.id, entity.readableId].filter(Boolean);
+  if (duplicateEntityIds.length > 0) {
+    const { data: duplicateRows } = await client
+      .from("pickingListLine")
+      .select("id, pickedTrackedEntityId, pickedQuantity")
+      .eq("pickingListId", pickingListId)
+      .eq("companyId", companyId)
+      .neq("id", pickingListLineId)
+      .in("pickedTrackedEntityId", duplicateEntityIds as string[]);
+
+    const hasDuplicate = (duplicateRows ?? []).some((r: any) => Number(r.pickedQuantity ?? 0) > 0);
+    if (hasDuplicate) {
+      throw new Error("Tracked entity already picked on another line in this picking list");
+    }
+  }
+
+  const effectiveQty = (line.adjustedQuantity ?? line.estimatedQuantity) as number;
+  const alreadyPicked = (line.pickedQuantity as number) ?? 0;
+  const outstanding = Math.max(effectiveQty - alreadyPicked, 0);
+
+  // Auto-split: if entity qty < outstanding, close this line and create a sibling for remainder
+  if (pickedQuantity < outstanding) {
+    const remainder = outstanding - pickedQuantity;
+    const { error: splitError } = await client.from("pickingListLine").insert({
+      pickingListId: line.pickingListId,
+      jobMaterialId: line.jobMaterialId,
+      itemId: line.itemId,
+      storageUnitId: line.storageUnitId,
+      destinationStorageUnitId: line.destinationStorageUnitId,
+      estimatedQuantity: remainder,
+      requiresBatchTracking: line.requiresBatchTracking,
+      requiresSerialTracking: line.requiresSerialTracking,
+      unitOfMeasureCode: line.unitOfMeasureCode,
+      companyId,
+      createdBy: userId,
+    });
+    if (splitError) throw new Error(splitError.message ?? "Failed to split picking list line");
+  }
+
   const { error: lineError } = await client
-    .from("pickingListLine")
-    .update({
-      pickedTrackedEntityId: trackedEntityId,
+      .from("pickingListLine")
+      .update({
+      pickedTrackedEntityId: entity.id,
       pickedQuantity,
+      // When splitting, shrink this line's estimatedQuantity to exactly what was picked
+      // so outstandingQuantity = GREATEST(estimatedQty - pickedQty, 0) = 0
+      // adjustedQuantity is intentionally left alone (reserved for P3 supervisor overrides)
+      ...(pickedQuantity < outstanding ? { estimatedQuantity: pickedQuantity } : {}),
       updatedBy: userId,
       updatedAt: new Date().toISOString(),
     })
@@ -364,7 +432,7 @@ async function confirmPickingList(client: any, payload: any) {
 
   const ledgerEntries: any[] = [];
   const jobMaterialUpdates: Array<{ id: string; pickedQty: number }> = [];
-  const entityConsumes: string[] = [];
+  const entityConsumes: Array<{ entityId: string; pickedQty: number }> = [];
 
   for (const line of lines) {
     if (line.pickedQuantity <= 0) continue;
@@ -382,10 +450,12 @@ async function confirmPickingList(client: any, payload: any) {
       createdBy: userId,
     });
 
-    jobMaterialUpdates.push({ id: line.jobMaterialId, pickedQty: line.pickedQuantity });
+    if (line.jobMaterialId) {
+      jobMaterialUpdates.push({ id: line.jobMaterialId, pickedQty: line.pickedQuantity });
+    }
 
     if (line.pickedTrackedEntityId) {
-      entityConsumes.push(line.pickedTrackedEntityId);
+      entityConsumes.push({ entityId: line.pickedTrackedEntityId, pickedQty: line.pickedQuantity });
     }
   }
 
@@ -412,10 +482,53 @@ async function confirmPickingList(client: any, payload: any) {
   }
 
   if (entityConsumes.length > 0) {
+    const entityIds = entityConsumes.map((e) => e.entityId);
+    const { data: entities } = await client
+      .from("trackedEntity")
+      .select("*")
+      .in("id", entityIds)
+      .eq("companyId", companyId);
+
+    const entityMap = new Map<string, any>((entities ?? []).map((e: any) => [e.id, e]));
+
+    const remainderInserts: any[] = [];
+    for (const { entityId, pickedQty } of entityConsumes) {
+      const entity = entityMap.get(entityId);
+      if (!entity) continue;
+      const remainderQty = Number(entity.quantity) - pickedQty;
+      if (remainderQty > 0) {
+        // Shrink the consumed entity to the actual picked quantity
+        await client
+          .from("trackedEntity")
+          .update({ quantity: pickedQty })
+          .eq("id", entityId)
+          .eq("companyId", companyId);
+        // Create a new Available entity for the remainder (same lot/batch info)
+        remainderInserts.push({
+          readableId: entity.readableId ?? null,
+          itemId: entity.itemId ?? null,
+          sourceDocument: entity.sourceDocument,
+          sourceDocumentId: entity.sourceDocumentId,
+          sourceDocumentReadableId: entity.sourceDocumentReadableId ?? null,
+          attributes: entity.attributes ?? {},
+          expirationDate: entity.expirationDate ?? null,
+          quantity: remainderQty,
+          status: "Available",
+          splitFromEntityId: entityId,
+          companyId,
+          createdBy: userId,
+        });
+      }
+    }
+
+    if (remainderInserts.length > 0) {
+      await client.from("trackedEntity").insert(remainderInserts);
+    }
+
     await client
       .from("trackedEntity")
       .update({ status: "Consumed" })
-      .in("id", entityConsumes)
+      .in("id", entityIds)
       .eq("companyId", companyId);
 
     const { data: activity } = await client
@@ -432,14 +545,28 @@ async function confirmPickingList(client: any, payload: any) {
       .single();
 
     if (activity) {
-      const inputs = entityConsumes.map((eid) => ({
+      // Input: the entity as it existed before consumption (original quantity from DB)
+      const inputs = entityConsumes.map(({ entityId, pickedQty }) => {
+        const entity = entityMap.get(entityId);
+        return {
+          trackedActivityId: activity.id,
+          trackedEntityId: entityId,
+          quantity: entity ? Number(entity.quantity) : pickedQty,
+          companyId,
+          createdBy: userId,
+        };
+      });
+      await client.from("trackedActivityInput").insert(inputs);
+
+      // Output: the consumed portion (what actually left inventory)
+      const outputs = entityConsumes.map(({ entityId, pickedQty }) => ({
         trackedActivityId: activity.id,
-        trackedEntityId: eid,
-        quantity: lines.find((l: any) => l.pickedTrackedEntityId === eid)?.pickedQuantity ?? 0,
+        trackedEntityId: entityId,
+        quantity: pickedQty,
         companyId,
         createdBy: userId,
       }));
-      await client.from("trackedActivityInput").insert(inputs);
+      await client.from("trackedActivityOutput").insert(outputs);
     }
   }
 
@@ -457,6 +584,126 @@ async function confirmPickingList(client: any, payload: any) {
     .eq("companyId", companyId);
 
   if (plError) throw new Error(plError.message ?? "Failed to confirm picking list");
+
+  return { success: true };
+}
+
+async function reversePickingList(client: any, payload: any) {
+  const { pickingListId, companyId, userId } = payload;
+  const now = new Date().toISOString();
+
+  const { data: pl } = await client
+    .from("pickingList")
+    .select("*, pickingListLine(*)")
+    .eq("id", pickingListId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (!pl) throw new Error("Picking list not found");
+  if (pl.status !== "Confirmed") throw new Error("Only Confirmed picking lists can be reversed");
+
+  const lines: any[] = pl.pickingListLine ?? [];
+
+  const reversalEntries: any[] = [];
+  const jobMaterialRollbacks: Array<{ id: string; pickedQty: number }> = [];
+  const entityRestorations: string[] = [];
+
+  for (const line of lines) {
+    if ((line.pickedQuantity ?? 0) <= 0) continue;
+
+    reversalEntries.push({
+      entryType: "Positive Adjmt.",
+      documentType: "Job Consumption", // reversal of a prior consumption entry
+      documentId: pl.jobId,
+      documentLineId: line.jobMaterialId ?? null,
+      itemId: line.itemId,
+      quantity: line.pickedQuantity,
+      trackedEntityId: line.pickedTrackedEntityId ?? null,
+      locationId: pl.locationId,
+      companyId,
+      createdBy: userId,
+    });
+
+    if (line.jobMaterialId) {
+      jobMaterialRollbacks.push({ id: line.jobMaterialId, pickedQty: line.pickedQuantity });
+    }
+
+    if (line.pickedTrackedEntityId) {
+      entityRestorations.push(line.pickedTrackedEntityId);
+    }
+  }
+
+  if (reversalEntries.length > 0) {
+    const { error: ledgerError } = await client.from("itemLedger").insert(reversalEntries);
+    if (ledgerError) throw new Error(ledgerError.message ?? "Failed to post reversal ledger entries");
+  }
+
+  for (const { id, pickedQty } of jobMaterialRollbacks) {
+    const { data: jm } = await client
+      .from("jobMaterial")
+      .select("quantityIssued")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .single();
+    if (jm) {
+      await client
+        .from("jobMaterial")
+        .update({ quantityIssued: Math.max(0, (jm.quantityIssued ?? 0) - pickedQty) })
+        .eq("id", id)
+        .eq("companyId", companyId);
+    }
+  }
+
+  // Restore tracked entities: merge split remainders back, then mark Available
+  if (entityRestorations.length > 0) {
+    // Find any remainder entities that were split off from these consumed entities
+    const { data: remainders } = await client
+      .from("trackedEntity")
+      .select("id, quantity, splitFromEntityId")
+      .in("splitFromEntityId", entityRestorations)
+      .eq("companyId", companyId)
+      .eq("status", "Available");
+
+    if (remainders && remainders.length > 0) {
+      // Add remainder qty back to each original consumed entity
+      for (const remainder of remainders) {
+        const { data: original } = await client
+          .from("trackedEntity")
+          .select("quantity")
+          .eq("id", remainder.splitFromEntityId)
+          .eq("companyId", companyId)
+          .single();
+        if (original) {
+          await client
+            .from("trackedEntity")
+            .update({ quantity: Number(original.quantity) + Number(remainder.quantity) })
+            .eq("id", remainder.splitFromEntityId)
+            .eq("companyId", companyId);
+        }
+      }
+      // Delete the remainder entities
+      await client
+        .from("trackedEntity")
+        .delete()
+        .in("id", remainders.map((r: any) => r.id))
+        .eq("companyId", companyId);
+    }
+
+    await client
+      .from("trackedEntity")
+      .update({ status: "Available" })
+      .in("id", entityRestorations)
+      .eq("companyId", companyId)
+      .eq("status", "Consumed");
+  }
+
+  const { error: plError } = await client
+    .from("pickingList")
+    .update({ status: "Cancelled", updatedBy: userId, updatedAt: now })
+    .eq("id", pickingListId)
+    .eq("companyId", companyId);
+
+  if (plError) throw new Error(plError.message ?? "Failed to reverse picking list");
 
   return { success: true };
 }
@@ -528,6 +775,8 @@ serve(async (req: Request) => {
         return Response.json(await confirmPickingList(client, validated), { headers: corsHeaders });
       case "cancelPickingList":
         return Response.json(await cancelPickingList(client, validated), { headers: corsHeaders });
+      case "reversePickingList":
+        return Response.json(await reversePickingList(client, validated), { headers: corsHeaders });
       case "stageJob":
       case "generateStockTransfer":
         return new Response(

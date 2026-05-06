@@ -18,7 +18,9 @@ import {
   LuCircleCheck,
   LuCirclePlay,
   LuEllipsisVertical,
+  LuPrinter,
   LuRefreshCw,
+  LuRotateCcw,
   LuTrash
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
@@ -27,6 +29,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { PickingListDetail, PickingListLine } from "~/modules/inventory";
 import { path } from "~/utils/path";
+import PickingListConfirmModal from "./PickingListConfirmModal";
 import PickingListStatus from "./PickingListStatus";
 
 const PickingListHeader = () => {
@@ -43,6 +46,7 @@ const PickingListHeader = () => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
+  const confirmModal = useDisclosure();
   const statusFetcher = useFetcher<Result>();
 
   const pl = routeData.pickingList;
@@ -54,6 +58,8 @@ const PickingListHeader = () => {
   const canConfirm =
     ["Released", "In Progress"].includes(status) &&
     permissions.can("update", "inventory");
+  const canReverse =
+    status === "Confirmed" && permissions.can("update", "inventory");
   const canDelete =
     ["Draft", "Cancelled"].includes(status) &&
     permissions.can("delete", "inventory");
@@ -93,22 +99,55 @@ const PickingListHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open(path.to.pickingListPdf(id), "_blank")
+                  }
+                >
+                  <DropdownMenuIcon icon={<LuPrinter />} />
+                  <Trans>Print / PDF</Trans>
+                </DropdownMenuItem>
+
                 {canRegenerate && (
-                  <DropdownMenuItem
-                    onClick={() =>
-                      statusFetcher.submit(
-                        {},
-                        {
-                          method: "post",
-                          action: path.to.regeneratePickingList(id)
-                        }
-                      )
-                    }
-                  >
-                    <DropdownMenuIcon icon={<LuRefreshCw />} />
-                    <Trans>Regenerate Lines</Trans>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        statusFetcher.submit(
+                          {},
+                          {
+                            method: "post",
+                            action: path.to.regeneratePickingList(id)
+                          }
+                        )
+                      }
+                    >
+                      <DropdownMenuIcon icon={<LuRefreshCw />} />
+                      <Trans>Regenerate Lines</Trans>
+                    </DropdownMenuItem>
+                  </>
                 )}
+
+                {canReverse && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        statusFetcher.submit(
+                          {},
+                          {
+                            method: "post",
+                            action: path.to.reversePickingList(id)
+                          }
+                        )
+                      }
+                    >
+                      <DropdownMenuIcon icon={<LuRotateCcw />} />
+                      <Trans>Reverse Consumption</Trans>
+                    </DropdownMenuItem>
+                  </>
+                )}
+
                 {canCancel && (
                   <>
                     <DropdownMenuSeparator />
@@ -127,6 +166,7 @@ const PickingListHeader = () => {
                     </DropdownMenuItem>
                   </>
                 )}
+
                 {canDelete && (
                   <>
                     <DropdownMenuSeparator />
@@ -174,18 +214,21 @@ const PickingListHeader = () => {
               leftIcon={<LuCircleCheck />}
               variant={canConfirm ? "primary" : "secondary"}
               isDisabled={!canConfirm}
-              onClick={() =>
-                statusFetcher.submit(
-                  {},
-                  { method: "post", action: path.to.confirmPickingList(id) }
-                )
-              }
+              onClick={confirmModal.onOpen}
             >
               <Trans>Confirm</Trans>
             </Button>
           </HStack>
         </HStack>
       </div>
+
+      {confirmModal.isOpen && (
+        <PickingListConfirmModal
+          pickingListId={id}
+          lines={lines}
+          onClose={confirmModal.onClose}
+        />
+      )}
 
       {deleteModal.isOpen && (
         <ConfirmDelete

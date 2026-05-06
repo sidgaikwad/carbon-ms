@@ -1,5 +1,5 @@
 import type { Result } from "@carbon/auth";
-import { error, success, useCarbon } from "@carbon/auth";
+import { success, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -52,10 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { trackedEntityId, pickedQuantity = 1 } = payload;
 
   if (!trackedEntityId) {
-    return data(
-      { success: false, message: "Tracked entity ID is required" },
-      await flash(request, error(null, "Tracked entity ID is required"))
-    );
+    return data({ success: false, message: "Tracked entity ID is required" });
   }
 
   const { error: fnError } = await client.functions.invoke("pick", {
@@ -71,10 +68,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (fnError) {
-    return data(
-      { success: false, message: fnError.message ?? "Failed to pick line" },
-      await flash(request, error(fnError.message, "Failed to pick line"))
-    );
+    let message = "Failed to pick line";
+    try {
+      const body = await (fnError as any).context?.json?.();
+      if (body?.error) message = body.error;
+    } catch {
+      // Best effort parse of edge-function error payload.
+    }
+    return data({ success: false, message });
   }
 
   throw redirect(
@@ -101,9 +102,14 @@ export default function PickingListScanRoute() {
   const fetcher = useFetcher<Result>();
 
   const [serialNumber, setSerialNumber] = useState("");
+  const [pickedQuantity, setPickedQuantity] = useState("1");
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isValid, setIsValid] = useState<boolean | null>(null);
+  const [validatedEntity, setValidatedEntity] = useState<{
+    id: string;
+    quantity: number;
+  } | null>(null);
 
   const onClose = () => navigate(path.to.pickingList(id));
 
@@ -113,10 +119,11 @@ export default function PickingListScanRoute() {
     }
   }, [fetcher.data]);
 
-  const validateAndPick = async (entityId: string) => {
-    if (!entityId.trim()) {
+  const validateEntity = async (input: string) => {
+    if (!input.trim()) {
       setValidationError(null);
       setIsValid(null);
+      setValidatedEntity(null);
       return;
     }
 
@@ -125,43 +132,82 @@ export default function PickingListScanRoute() {
     setIsValid(null);
 
     try {
-      const result = await carbon
+      // Accept either internal id or human-readable serial/batch number
+      const { data: rows } = (await carbon
         ?.from("trackedEntity")
         .select("*")
-        .eq("id", entityId)
-        .single();
+        .or(`id.eq.${input},readableId.eq.${input}`)
+        .limit(1)) ?? { data: null };
+
+      const result = { data: rows?.[0] ?? null };
 
       if (!result?.data) {
         setValidationError(t`Tracked entity not found`);
         setIsValid(false);
+        setValidatedEntity(null);
         return;
       }
 
       if (result.data.status !== "Available") {
         setValidationError(t`Entity is ${result.data.status}`);
         setIsValid(false);
+        setValidatedEntity(null);
         return;
       }
 
       if (result.data.sourceDocumentId !== (line as any).itemId) {
         setValidationError(
-          t`Wrong item — expected ${(line as any).item?.readableId}`
+          t`Wrong item - expected ${(line as any).item?.readableId}`
         );
         setIsValid(false);
+        setValidatedEntity(null);
         return;
       }
 
+      const entityQuantity = Number(result.data.quantity ?? 0);
+      const outstanding = Number((line as any).outstandingQuantity ?? 0);
+      const defaultQty =
+        outstanding > 0
+          ? Math.min(entityQuantity, outstanding)
+          : entityQuantity;
+
+      setValidatedEntity({
+        id: result.data.id,
+        quantity: entityQuantity
+      });
+      setPickedQuantity(String(defaultQty > 0 ? defaultQty : 1));
       setIsValid(true);
-      fetcher.submit(
-        { trackedEntityId: entityId, pickedQuantity: result.data.quantity },
-        { method: "POST", encType: "application/json" }
-      );
     } catch {
       setValidationError(t`Error validating entity`);
       setIsValid(false);
+      setValidatedEntity(null);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const pickValidatedEntity = () => {
+    if (!validatedEntity) {
+      setValidationError(t`Scan and validate an entity first`);
+      return;
+    }
+
+    const qty = Number(pickedQuantity);
+    if (!Number.isFinite(qty) || qty <= 0) {
+      setValidationError(t`Picked quantity must be greater than 0`);
+      return;
+    }
+
+    if (qty > validatedEntity.quantity) {
+      setValidationError(t`Picked quantity cannot exceed entity quantity`);
+      return;
+    }
+
+    setValidationError(null);
+    fetcher.submit(
+      { trackedEntityId: validatedEntity.id, pickedQuantity: qty },
+      { method: "POST", encType: "application/json" }
+    );
   };
 
   return (
@@ -187,11 +233,12 @@ export default function PickingListScanRoute() {
                 setSerialNumber(e.target.value);
                 setValidationError(null);
                 setIsValid(null);
+                setValidatedEntity(null);
               }}
               onKeyDown={(e) =>
-                e.key === "Enter" && validateAndPick(serialNumber)
+                e.key === "Enter" && validateEntity(serialNumber)
               }
-              onBlur={() => validateAndPick(serialNumber)}
+              onBlur={() => validateEntity(serialNumber)}
               autoFocus
               placeholder={t`Enter or scan entity ID`}
               className={cn(
@@ -212,6 +259,30 @@ export default function PickingListScanRoute() {
               )}
             </InputRightElement>
           </InputGroup>
+
+          <InputGroup>
+            <Input
+              type="number"
+              min={0}
+              step="any"
+              value={pickedQuantity}
+              onChange={(e) => {
+                setPickedQuantity(e.target.value);
+                setValidationError(null);
+              }}
+              placeholder={t`Picked quantity`}
+              disabled={
+                !validatedEntity || isLoading || fetcher.state !== "idle"
+              }
+            />
+            <InputRightElement>
+              {validatedEntity ? (
+                <span className="text-xs text-muted-foreground">
+                  / {validatedEntity.quantity}
+                </span>
+              ) : null}
+            </InputRightElement>
+          </InputGroup>
         </ModalBody>
         <ModalFooter>
           <Button variant="secondary" onClick={onClose}>
@@ -220,8 +291,8 @@ export default function PickingListScanRoute() {
           <Button
             leftIcon={<LuCircleCheck />}
             isLoading={fetcher.state !== "idle"}
-            isDisabled={fetcher.state !== "idle"}
-            onClick={() => validateAndPick(serialNumber)}
+            isDisabled={!validatedEntity || fetcher.state !== "idle"}
+            onClick={pickValidatedEntity}
           >
             <Trans>Pick</Trans>
           </Button>

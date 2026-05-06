@@ -71,6 +71,7 @@ export const path = {
         generatePath(
           `${api}/production/methods/${id}/bom.csv?withOperations=${withOperations}`
         ),
+      inventoryJobs: `${api}/inventory/jobs`,
       jobs: `${api}/production/jobs`,
       kanban: (id: string) => generatePath(`${api}/kanban/${id}`),
       kanbanCollision: (id: string) =>
@@ -1265,6 +1266,15 @@ export const path = {
       generatePath(`${x}/picking-list/delete/${id}`),
     newPickingList: `${x}/inventory/picking-lists/new`,
     pickingLists: `${x}/inventory/picking-lists`,
+    reversePickingList: (id: string) =>
+      generatePath(`${x}/picking-list/${id}/reverse`),
+    pickingListLineNew: (id: string) =>
+      generatePath(`${x}/picking-list/${id}/line/new`),
+    pickingListLine: (id: string, lineId: string) =>
+      generatePath(`${x}/picking-list/${id}/line/${lineId}`),
+    pickingListLineDelete: (id: string, lineId: string) =>
+      generatePath(`${x}/picking-list/${id}/line/${lineId}/delete`),
+    pickingListPdf: (id: string) => generatePath(`${x}/picking-list/${id}/pdf`),
     suggestion: (id: string) =>
       generatePath(`${x}/resources/suggestions/${id}`),
     suggestions: `${x}/resources/suggestions`,

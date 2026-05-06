@@ -12,8 +12,16 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
-import { LuCircleCheck, LuQrCode, LuUndo2, LuWarehouse } from "react-icons/lu";
+import { useEffect, useState } from "react";
+import {
+  LuCircleCheck,
+  LuPencil,
+  LuPlus,
+  LuQrCode,
+  LuTrash,
+  LuUndo2,
+  LuWarehouse
+} from "react-icons/lu";
 import { useFetcher, useNavigate, useParams } from "react-router";
 import { Empty, ItemThumbnail } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -23,24 +31,29 @@ import { path } from "~/utils/path";
 interface PickingListLineRowProps {
   line: PickingListLine;
   isEditable: boolean;
+  allocatedElsewhere: number;
   onPick: (line: PickingListLine, qty: number) => void;
   onUnpick: (line: PickingListLine) => void;
   onScan: (line: PickingListLine) => void;
+  onEdit: (line: PickingListLine) => void;
+  onDelete: (line: PickingListLine) => void;
 }
 
 function PickingListLineRow({
   line,
   isEditable,
+  allocatedElsewhere,
   onPick,
   onUnpick,
-  onScan
+  onScan,
+  onEdit,
+  onDelete
 }: PickingListLineRowProps) {
   const [qty, setQty] = useState<string>(String(line.pickedQuantity ?? 0));
   const item = (line as any).item;
   const storageUnit = (line as any).storageUnit;
   const isTracked = line.requiresBatchTracking || line.requiresSerialTracking;
   const isPicked = (line.pickedQuantity ?? 0) > 0;
-
   return (
     <div
       className={cn(
@@ -66,16 +79,27 @@ function PickingListLineRow({
                 {storageUnit.name}
               </span>
             )}
-            {line.requiresBatchTracking && (
-              <Badge variant="outline" className="text-xs w-fit mt-0.5">
-                Batch
-              </Badge>
-            )}
-            {line.requiresSerialTracking && (
-              <Badge variant="outline" className="text-xs w-fit mt-0.5">
-                Serial
-              </Badge>
-            )}
+            <HStack spacing={1} className="mt-0.5 flex-wrap">
+              {line.requiresBatchTracking && (
+                <Badge variant="outline" className="text-xs w-fit">
+                  Batch
+                </Badge>
+              )}
+              {line.requiresSerialTracking && (
+                <Badge variant="outline" className="text-xs w-fit">
+                  Serial
+                </Badge>
+              )}
+              {allocatedElsewhere > 0 && (
+                <Badge
+                  variant="outline"
+                  className="text-xs w-fit text-amber-600 border-amber-300"
+                >
+                  {allocatedElsewhere} {line.unitOfMeasureCode}{" "}
+                  <Trans>in other PLs</Trans>
+                </Badge>
+              )}
+            </HStack>
           </VStack>
         </HStack>
 
@@ -124,6 +148,12 @@ function PickingListLineRow({
                     type="number"
                     min={0}
                     step="any"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        (e.target as HTMLInputElement).blur();
+                      }
+                    }}
                     onBlur={() => {
                       const n = parseFloat(qty);
                       if (!isNaN(n) && n !== line.pickedQuantity) {
@@ -144,6 +174,25 @@ function PickingListLineRow({
                   variant="ghost"
                   size="sm"
                   onClick={() => onUnpick(line)}
+                />
+              )}
+
+              <IconButton
+                aria-label="Edit line"
+                icon={<LuPencil />}
+                variant="ghost"
+                size="sm"
+                onClick={() => onEdit(line)}
+              />
+
+              {!isPicked && (
+                <IconButton
+                  aria-label="Delete line"
+                  icon={<LuTrash />}
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => onDelete(line)}
                 />
               )}
             </div>
@@ -184,6 +233,13 @@ function PickingListLineRow({
           {line.unitOfMeasureCode}
         </div>
       )}
+
+      {(line.overPickQuantity ?? 0) > 0 && (
+        <div className="ml-12 text-xs text-red-500">
+          <Trans>Overpick:</Trans> {line.overPickQuantity}{" "}
+          {line.unitOfMeasureCode}
+        </div>
+      )}
     </div>
   );
 }
@@ -205,42 +261,68 @@ const PickingListLines = () => {
   const navigate = useNavigate();
   const pickFetcher = useFetcher();
 
+  // Soft allocation: fetch outstanding qty for these items across other active PLs
+  const allocationFetcher = useFetcher<{
+    data: Array<{ itemId: string; allocatedQuantity: number }>;
+  }>();
+  const itemIds = lines.map((l) => l.itemId).filter(Boolean) as string[];
+
+  useEffect(() => {
+    if (itemIds.length > 0) {
+      allocationFetcher.load(
+        `/api/inventory/soft-allocations?itemIds=${itemIds.join(",")}&excludePickingListId=${id}`
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, lines.length]);
+
+  const allocationMap = (allocationFetcher.data?.data ?? []).reduce<
+    Record<string, number>
+  >((acc, row) => {
+    acc[row.itemId] = row.allocatedQuantity;
+    return acc;
+  }, {});
+
   const isEditable =
     pl != null &&
     ["Released", "In Progress"].includes(pl.status) &&
+    permissions.can("update", "inventory");
+
+  const canManageLines =
+    pl != null &&
+    !["Confirmed"].includes(pl.status) &&
     permissions.can("update", "inventory");
 
   const pickedCount = lines.filter((l) => (l.pickedQuantity ?? 0) > 0).length;
 
   const onPick = (line: PickingListLine, qty: number) => {
     pickFetcher.submit(
-      {
-        pickingListId: id,
-        pickingListLineId: line.id!,
-        pickedQuantity: qty
-      },
-      {
-        method: "post",
-        action: path.to.pickingListLineQuantity(id)
-      }
+      { pickingListId: id, pickingListLineId: line.id!, pickedQuantity: qty },
+      { method: "post", action: path.to.pickingListLineQuantity(id) }
     );
   };
 
   const onUnpick = (line: PickingListLine) => {
     pickFetcher.submit(
-      {
-        pickingListId: id,
-        pickingListLineId: line.id!
-      },
-      {
-        method: "post",
-        action: path.to.unpickPickingListLine(id, line.id!)
-      }
+      { pickingListId: id, pickingListLineId: line.id! },
+      { method: "post", action: path.to.unpickPickingListLine(id, line.id!) }
     );
   };
 
   const onScan = (line: PickingListLine) => {
     navigate(path.to.pickingListScan(id, line.id!));
+  };
+
+  const onEdit = (line: PickingListLine) => {
+    navigate(path.to.pickingListLine(id, line.id!));
+  };
+
+  const onDelete = (line: PickingListLine) => {
+    if (!confirm(t`Delete this line?`)) return;
+    pickFetcher.submit(
+      {},
+      { method: "post", action: path.to.pickingListLineDelete(id, line.id!) }
+    );
   };
 
   return (
@@ -255,6 +337,16 @@ const PickingListLines = () => {
               </span>
             )}
           </CardTitle>
+          {canManageLines && (
+            <Button
+              size="sm"
+              variant="secondary"
+              leftIcon={<LuPlus />}
+              onClick={() => navigate(path.to.pickingListLineNew(id))}
+            >
+              <Trans>Add Line</Trans>
+            </Button>
+          )}
         </HStack>
       </CardHeader>
       <CardContent className="p-0">
@@ -270,9 +362,12 @@ const PickingListLines = () => {
               key={line.id}
               line={line}
               isEditable={isEditable}
+              allocatedElsewhere={allocationMap[line.itemId ?? ""] ?? 0}
               onPick={onPick}
               onUnpick={onUnpick}
               onScan={onScan}
+              onEdit={onEdit}
+              onDelete={onDelete}
             />
           ))
         )}

@@ -1,4 +1,4 @@
-import { Button, MenuIcon, MenuItem } from "@carbon/react";
+import { Button, Combobox, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -15,22 +15,36 @@ import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
+import { pickingListStatusType } from "../../inventory.models";
 import type { PickingList } from "../../types";
 import PickingListStatus from "./PickingListStatus";
 
 type PickingListsTableProps = {
   data: PickingList[];
   count: number;
-  locationId?: string;
+  locations: { id: string; name: string }[];
+  locationId: string | null;
 };
 
 const PickingListsTable = memo(
-  ({ data, count, locationId }: PickingListsTableProps) => {
+  ({
+    data,
+    count,
+    locations: serverLocations,
+    locationId
+  }: PickingListsTableProps) => {
     const { t } = useLingui();
     const { formatDate } = useDateFormatter();
     const navigate = useNavigate();
     const permissions = usePermissions();
-    const locations = useLocations();
+
+    const clientLocations = useLocations();
+    const locations = useMemo(() => {
+      if (serverLocations?.length) {
+        return serverLocations.map((l) => ({ value: l.id, label: l.name }));
+      }
+      return clientLocations;
+    }, [serverLocations, clientLocations]);
 
     const columns = useMemo<ColumnDef<PickingList>[]>(
       () => [
@@ -49,7 +63,17 @@ const PickingListsTable = memo(
           header: t`Status`,
           cell: ({ row }) => (
             <PickingListStatus status={row.original.status as any} />
-          )
+          ),
+          meta: {
+            filter: {
+              type: "static",
+              options: pickingListStatusType.map((s) => ({
+                value: s,
+                label: <PickingListStatus status={s} />
+              }))
+            },
+            pluralHeader: t`Statuses`
+          }
         },
         {
           accessorKey: "locationId",
@@ -103,45 +127,55 @@ const PickingListsTable = memo(
       [t, formatDate, locations]
     );
 
-    const actions = useCallback(
-      (row: PickingList): React.ReactNode[] => {
-        const actions: React.ReactNode[] = [
-          <MenuItem
-            key="open"
-            onClick={() => navigate(path.to.pickingList(row.id!))}
-          >
-            <MenuIcon icon={<LuBookMarked />} />
-            <Trans>Open</Trans>
-          </MenuItem>
-        ];
-        return actions;
-      },
+    const rowActions = useCallback(
+      (row: PickingList): React.ReactNode[] => [
+        <MenuItem
+          key="open"
+          onClick={() => navigate(path.to.pickingList(row.id!))}
+        >
+          <MenuIcon icon={<LuBookMarked />} />
+          <Trans>Open</Trans>
+        </MenuItem>
+      ],
       [navigate]
     );
 
+    const primaryAction = useMemo(
+      () => (
+        <div className="flex items-center gap-2">
+          <Combobox
+            asButton
+            size="sm"
+            value={locationId ?? ""}
+            options={locations}
+            onChange={(selected) => {
+              window.location.href = `${path.to.pickingLists}?location=${selected}`;
+            }}
+          />
+          {permissions.can("create", "inventory") && (
+            <Button
+              leftIcon={<LuCirclePlus />}
+              onClick={() => navigate(path.to.newPickingList)}
+            >
+              <Trans>New Picking List</Trans>
+            </Button>
+          )}
+        </div>
+      ),
+      [locationId, locations, permissions, navigate]
+    );
+
     return (
-      <>
-        <Table<PickingList>
-          data={data}
-          columns={columns}
-          count={count}
-          actions={actions}
-          primaryAction={
-            permissions.can("create", "inventory") ? (
-              <Button
-                leftIcon={<LuCirclePlus />}
-                onClick={() => navigate(path.to.newPickingList)}
-              >
-                <Trans>New Picking List</Trans>
-              </Button>
-            ) : undefined
-          }
-          withSearch
-          withFilters
-          withColumnVisibility
-          withPagination
-        />
-      </>
+      <Table<PickingList>
+        data={data}
+        columns={columns}
+        count={count}
+        actions={rowActions}
+        primaryAction={primaryAction}
+        withSearch
+        withColumnVisibility
+        withPagination
+      />
     );
   }
 );

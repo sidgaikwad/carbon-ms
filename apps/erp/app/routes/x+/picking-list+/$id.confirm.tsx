@@ -2,8 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
-import { path } from "~/utils/path";
+import { data } from "react-router";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -18,28 +17,54 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const shortageReason =
     (formData.get("shortageReason") as string) || undefined;
 
-  const { error: fnError } = await client.functions.invoke("pick", {
-    body: JSON.stringify({
-      type: "confirmPickingList",
-      pickingListId: id,
-      shortageReason,
-      companyId,
-      userId
-    })
-  });
+  const { data: fnResult, error: fnError } = await client.functions.invoke(
+    "pick",
+    {
+      body: JSON.stringify({
+        type: "confirmPickingList",
+        pickingListId: id,
+        shortageReason,
+        companyId,
+        userId
+      })
+    }
+  );
 
-  if (fnError) {
+  if (fnError || fnResult?.error) {
+    // Extract backend message from edge function response
+    let message = fnError?.message ?? null;
+    if (
+      !message &&
+      fnError &&
+      typeof fnError === "object" &&
+      "context" in fnError
+    ) {
+      const ctx = (fnError as any).context;
+      if (ctx?.json) {
+        const body = await ctx.json().catch(() => null);
+        if (body && typeof body === "object" && "error" in body) {
+          message = (body as any).error;
+        }
+      } else if (ctx?.text) {
+        message = await ctx.text().catch(() => null);
+      }
+    }
+    if (!message && fnResult?.error) {
+      message =
+        typeof fnResult.error === "string"
+          ? fnResult.error
+          : "Failed to confirm picking list";
+    }
+    message = message ?? "Failed to confirm picking list";
+
     return data(
-      { success: false },
-      await flash(
-        request,
-        error(fnError.message, "Failed to confirm picking list")
-      )
+      { success: false, message },
+      await flash(request, error(message, "Failed to confirm picking list"))
     );
   }
 
-  throw redirect(
-    path.to.pickingList(id),
+  return data(
+    { success: true },
     await flash(
       request,
       success("Picking list confirmed and consumption posted")
