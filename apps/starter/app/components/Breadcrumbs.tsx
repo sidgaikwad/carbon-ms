@@ -26,6 +26,10 @@ import { z } from "zod";
 import { useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 
+type CompanyWithGroupName = Company & {
+  companyGroupName?: string | null;
+};
+
 const BreadcrumbsBase = forwardRef<
   HTMLElement,
   ComponentProps<"nav"> & {
@@ -148,9 +152,10 @@ const Breadcrumbs = () => {
 
 function CompanyBreadcrumb() {
   const mode = useMode();
-  const routeData = useRouteData<{ company: Company; companies: Company[] }>(
-    path.to.authenticatedRoot
-  );
+  const routeData = useRouteData<{
+    company: CompanyWithGroupName;
+    companies: CompanyWithGroupName[];
+  }>(path.to.authenticatedRoot);
 
   const hasMultipleCompanies = Boolean(
     routeData?.companies && routeData?.companies.length > 1
